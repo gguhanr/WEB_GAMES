@@ -40,7 +40,7 @@ https://balavignesh2025.neocities.org/Project/fruit%20ninja/slice_rush_mobile
 
 ## 👨‍💻 Developer
 
-**BALAVIGNESH A**
+**GUHAN S**
 MCA Student 
 
 ## 📜 License
