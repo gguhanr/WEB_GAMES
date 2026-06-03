@@ -8,18 +8,17 @@ A collection of fun browser-based games created using HTML, CSS, and JavaScript.
 
 **Demo:**
 
-https://balavignesh2025.neocities.org/WEB_GAMES/Space%20Shooter/galaxy_shooter
 ---
 ### 2.  Flappy Bird 
 
 **Demo:**
-https://balavignesh2025.neocities.org/WEB_GAMES/flappy%20bird/flappy_bird
+
 ---
 
 ### 3.  Fruit Ninja
 
 **Demo:**
-https://balavignesh2025.neocities.org/Project/fruit%20ninja/slice_rush_mobile
+
 ---
 
 ## 🛠️ Technologies Used
