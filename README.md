@@ -11,7 +11,7 @@ A collection of fun browser-based games created using HTML, CSS, and JavaScript.
 ---
 ### 2.  Flappy Bird 
 
-**Demo:**
+**Demo:** https://gguhanr.neocities.org/web%20games/Flappy%20Bird/flappy_bird_advanced
 
 ---
 
