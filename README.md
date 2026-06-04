@@ -6,7 +6,7 @@ A collection of fun browser-based games created using HTML, CSS, and JavaScript.
 
 ### 1.  Space Shooter
 
-**Demo:**
+**Demo:** https://gguhanr.neocities.org/web%20games/Space%20Shooter/galaxy_shooter 
 
 ---
 ### 2.  Flappy Bird 
