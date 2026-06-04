@@ -17,7 +17,7 @@ A collection of fun browser-based games created using HTML, CSS, and JavaScript.
 
 ### 3.  Fruit Ninja
 
-**Demo:**
+**Demo:** https://gguhanr.neocities.org/web%20games/fruit%20ninja/slice_rush_mobile
 
 ---
 
