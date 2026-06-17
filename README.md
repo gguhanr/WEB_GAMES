@@ -14,7 +14,7 @@ A collection of fun browser-based games created using HTML, CSS, and JavaScript.
 **Demo:** https://gguhanr.neocities.org/web%20games/fruit%20ninja/slice_rush_mobile
 ---
 ### 4. Angry Birdz
-
+**Demo:** 
 ---
 ## 🛠️ Technologies Used
 
