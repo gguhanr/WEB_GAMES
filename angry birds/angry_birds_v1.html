@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Angry Birds</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+:root{
+  --sky1:#1a6fbf;--sky2:#a8d8f0;
+  --accent:#ff5500;--yellow:#ffd000;
+  --panel-bg:rgba(255,255,255,0.92);--border-dark:#1a2332;
+  --gold:#f5c400;--gold-dark:#b8860b;
+  --red:#e8321c;--red-dark:#a01a0a;
+  --blue:#1e6fe8;--blue-dark:#0d47a1;
+  --green-pig:#3cb85c;
+}
+body {
+  font-family: 'Nunito', sans-serif;
+  background: radial-gradient(ellipse at center, #0d1b2a 0%, #000 100%);
+  width: 100vw; height: 100vh;
+  overflow: hidden; 
+  user-select: none; -webkit-user-select: none; 
+}
+
+/* ── App Container ── */
+#app {
+  position: absolute;
+  width: 900px; height: 520px; 
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%); 
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08), 0 32px 80px rgba(0,0,0,0.8);
+}
+canvas {
+  width: 100%; height: 100%;
+  display: block; cursor: crosshair;
+  touch-action: none;
+}
+
+/* ── HUD ── */
+#hud {
+  position: absolute;
+  top: 10px; left: 10px; right: 10px;
+  display: flex; justify-content: space-between;
+  pointer-events: none; z-index: 10;
+}
+.hud-left, .hud-right { display: flex; gap: 6px; pointer-events: auto; align-items: flex-start; }
+
+.panel {
+  background: linear-gradient(160deg, rgba(255,255,255,0.96) 0%, rgba(245,248,255,0.92) 100%);
+  border: 2px solid rgba(255,255,255,0.6);
+  border-bottom: 3px solid rgba(0,0,0,0.25);
+  border-right: 2px solid rgba(0,0,0,0.12);
+  border-radius: 12px; padding: 5px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.8);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.panel label { 
+  font-size: 0.6rem; font-weight: 800; color: #7a8494; 
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1px; 
+}
+.panel .val { 
+  font-family: 'Fredoka One', cursive; font-size: 1.45rem; 
+  color: var(--border-dark); line-height: 1; 
+}
+.panel .val.accent { 
+  color: var(--accent); 
+  text-shadow: 0 1px 0 rgba(0,0,0,0.15);
+}
+
+#bird-queue { display: flex; gap: 3px; align-items: center; justify-content: center; min-height: 28px; }
+.bq-bird { 
+  width: 28px; height: 28px; border-radius: 50%; 
+  display: flex; align-items: center; justify-content: center; font-size: 17px; 
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.45)); 
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+}
+.bq-bird.used { opacity: 0.25; transform: scale(0.55); filter: grayscale(1); }
+.bq-bird:first-child:not(.used) { 
+  transform: scale(1.15); 
+  filter: drop-shadow(0 0 6px rgba(255,210,0,0.7)) drop-shadow(0 2px 3px rgba(0,0,0,0.45));
+}
+
+/* ── Icon Buttons ── */
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 11px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.96) 0%, rgba(235,240,255,0.92) 100%);
+  border: 2px solid rgba(255,255,255,0.6);
+  border-bottom: 3px solid rgba(0,0,0,0.22);
+  font-size: 1.25rem; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.8);
+  transition: all 0.1s;
+}
+.icon-btn:hover { background: linear-gradient(160deg, #fff 0%, #eef2ff 100%); }
+.icon-btn:active { transform: translateY(2px); border-bottom-width: 1px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+
+/* ── Buttons ── */
+.btn {
+  background: linear-gradient(180deg, #ff6b3d 0%, var(--red) 60%, #c42010 100%);
+  color: #fff;
+  border: 2px solid var(--red-dark); border-bottom: 4px solid #7a1008;
+  border-radius: 50px;
+  padding: 10px 28px; font-family: 'Fredoka One', cursive; font-size: 1.15rem;
+  cursor: pointer; margin: 7px 5px 0; 
+  box-shadow: 0 6px 18px rgba(200,40,20,0.45), inset 0 1px 0 rgba(255,160,120,0.4);
+  transition: all 0.1s ease-in-out; text-transform: uppercase; letter-spacing: 0.06em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+.btn:hover { background: linear-gradient(180deg, #ff7d52 0%, #f03820 60%, #c42010 100%); }
+.btn:active { transform: translateY(3px); border-bottom-width: 1px; box-shadow: 0 2px 8px rgba(200,40,20,0.4); }
+.btn.sec { 
+  background: linear-gradient(180deg, #4da3ff 0%, var(--blue) 60%, #1050c0 100%);
+  border-color: var(--blue-dark); border-bottom-color: #0a347a;
+  box-shadow: 0 6px 18px rgba(30,80,220,0.4), inset 0 1px 0 rgba(140,200,255,0.35);
+}
+.btn.sec:hover { background: linear-gradient(180deg, #60aeff 0%, #2878f0 60%, #1050c0 100%); }
+.btn.gold {
+  background: linear-gradient(180deg, #ffe060 0%, var(--gold) 60%, #c49800 100%);
+  border-color: var(--gold-dark); border-bottom-color: #8a6400; color: #3a2000;
+  box-shadow: 0 6px 18px rgba(200,150,0,0.45), inset 0 1px 0 rgba(255,255,160,0.5);
+  text-shadow: 0 1px 0 rgba(255,255,200,0.5);
+}
+
+/* ── Overlays ── */
+.overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(160deg, rgba(8,14,30,0.88) 0%, rgba(20,10,40,0.84) 100%);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; z-index: 20;
+}
+.overlay-box {
+  background: linear-gradient(170deg, #fff 0%, #f3f6ff 100%);
+  border: 2px solid rgba(255,255,255,0.7);
+  border-bottom: 5px solid rgba(0,0,0,0.2);
+  border-radius: 24px; padding: 22px 28px;
+  text-align: center; max-width: 600px; width: 92%;
+  max-height: 92%; overflow-y: auto;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.9);
+  animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  -webkit-overflow-scrolling: touch; 
+}
+@keyframes popIn { from { transform: scale(0.65) translateY(30px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+.overlay-box h2 { 
+  font-family: 'Fredoka One', cursive; font-size: 2.1rem; color: var(--accent); 
+  margin-bottom: 8px; -webkit-text-stroke: 1px var(--border-dark); 
+  text-shadow: 0 3px 0 var(--border-dark); 
+}
+.overlay-box p { color: #4a5568; font-size: 1rem; margin-bottom: 7px; font-weight: 700; }
+.overlay-box .big-score { 
+  font-family: 'Fredoka One', cursive; font-size: 2.8rem; color: var(--yellow); 
+  margin: 8px 0; -webkit-text-stroke: 2px var(--border-dark); 
+  text-shadow: 0 5px 0 var(--border-dark), 0 8px 16px rgba(0,0,0,0.3); 
+}
+.overlay-box .stars { 
+  font-size: 2.2rem; margin: 6px 0; letter-spacing: 4px; 
+  filter: drop-shadow(0 3px 2px rgba(0,0,0,0.3)); 
+}
+
+/* ── Level Banner ── */
+#level-banner {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(170deg, rgba(26,35,50,0.95) 0%, rgba(14,20,36,0.95) 100%);
+  color: rgba(255,255,255,0.92);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-bottom: 2px solid rgba(0,0,0,0.5);
+  font-family: 'Fredoka One', cursive; font-size: 1rem;
+  padding: 5px 18px; border-radius: 50px; pointer-events: none;
+  transition: opacity 0.4s; white-space: nowrap; 
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  z-index: 5;
+  backdrop-filter: blur(4px);
+}
+
+/* ── Level Map ── */
+.map-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin: 10px 0 16px; justify-items: center; }
+.map-node { 
+  width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(160deg, #3a80e8 0%, #1a5cbf 100%);
+  border: 2.5px solid rgba(255,255,255,0.5); border-bottom: 4px solid rgba(0,0,40,0.3);
+  color: #fff; font-family: 'Fredoka One', cursive; font-size: 1.25rem; 
+  display: flex; flex-direction: column; align-items: center; justify-content: center; 
+  cursor: pointer; transition: all 0.12s; 
+  box-shadow: 0 5px 14px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.35); 
+  position: relative; text-shadow: 0 1.5px 0 rgba(0,0,0,0.45); 
+}
+.map-node:hover:not(.locked) { transform: scale(1.1) translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+.map-node:active:not(.locked) { transform: translateY(2px); border-bottom-width: 2px; }
+.map-node.locked { background: linear-gradient(160deg, #8a9299 0%, #636c74 100%); border-color: rgba(255,255,255,0.2); cursor: not-allowed; opacity: 0.65; }
+.map-node.season-1:not(.locked) { background: linear-gradient(160deg, #56bb6a 0%, #2e8b3c 100%); }
+.map-node.season-2:not(.locked) { background: linear-gradient(160deg, #e87a32 0%, #b84e14 100%); }
+.map-node.season-3:not(.locked) { background: linear-gradient(160deg, #64d4f4 0%, #2898ca 100%); }
+.map-node.season-4:not(.locked) { background: linear-gradient(160deg, #9060f0 0%, #5a30c8 100%); }
+.map-node.season-5:not(.locked) { background: linear-gradient(160deg, #ff6030 0%, #cc2800 100%); }
+.map-stars { 
+  position: absolute; bottom: -11px; font-size: 0.6rem; letter-spacing: -1px; 
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7)); white-space: nowrap; 
+}
+.season-title { 
+  grid-column: 1 / -1; width: 100%; text-align: left; 
+  font-family: 'Fredoka One', cursive; font-size: 1.05rem; 
+  margin-top: 4px; padding: 4px 10px; border-radius: 8px;
+  -webkit-text-stroke: 0.5px currentColor;
+}
+.season-title.s1 { background: rgba(46,139,60,0.12); color: #2a7032; border-left: 3px solid #2e8b3c; }
+.season-title.s2 { background: rgba(184,78,20,0.12); color: #934010; border-left: 3px solid #b84e14; }
+.season-title.s3 { background: rgba(40,152,202,0.12); color: #1a6890; border-left: 3px solid #2898ca; }
+.season-title.s4 { background: rgba(90,48,200,0.12); color: #4820a0; border-left: 3px solid #5a30c8; }
+.season-title.s5 { background: rgba(204,40,0,0.12); color: #a02000; border-left: 3px solid #cc2800; }
+
+/* ── Start Screen Legend ── */
+.start-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 10px 0; }
+.leg { 
+  background: linear-gradient(135deg, rgba(248,250,255,0.9) 0%, rgba(235,240,255,0.7) 100%);
+  border-radius: 9px; border: 1.5px solid rgba(180,190,220,0.4); 
+  padding: 5px 9px; font-size: 0.78rem; font-weight: 800; color: #2d3748; 
+  display: flex; align-items: center; gap: 5px; text-align: left; 
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+/* ── Score Panels (Win screen) ── */
+.score-row {
+  display: flex; justify-content: center; gap: 16px; margin: 10px 0;
+}
+.score-card {
+  background: linear-gradient(160deg, #f0f4ff 0%, #e8eeff 100%);
+  border: 1.5px solid rgba(120,140,220,0.25);
+  border-radius: 14px; padding: 8px 18px; min-width: 100px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+.score-card .sc-label { font-size: 0.65rem; font-weight: 800; color: #7a88aa; text-transform: uppercase; letter-spacing: 0.08em; }
+.score-card .sc-val { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: #1a2332; line-height: 1.1; }
+.score-card .sc-val.accent { color: var(--accent); }
+
+/* ── Power Bar ── */
+#power-bar-wrap {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  width: 160px; pointer-events: none; z-index: 10; opacity: 0;
+  transition: opacity 0.15s;
+}
+#power-bar-wrap.visible { opacity: 1; }
+#power-bar-bg {
+  background: rgba(0,0,0,0.5); 
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 20px; height: 11px; overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+#power-bar-fill {
+  height: 100%; width: 0%; border-radius: 20px;
+  background: linear-gradient(90deg, #4caf50 0%, #ffd000 60%, #ff5500 100%);
+  transition: width 0.04s;
+  box-shadow: 0 0 8px currentColor;
+}
+#power-bar-label {
+  text-align: center; font-family: 'Fredoka One', cursive;
+  font-size: 0.7rem; color: rgba(255,255,255,0.85); 
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  margin-bottom: 3px; letter-spacing: 0.1em;
+}
+
+/* ── Combo Display ── */
+#combo-display {
+  position: absolute; top: 66px; right: 10px;
+  font-family: 'Fredoka One', cursive; font-size: 1.35rem;
+  color: #ffd000; 
+  -webkit-text-stroke: 1.5px #8b6508;
+  text-shadow: 0 3px 0 #6b4a00, 0 0 24px rgba(255,160,0,0.6);
+  pointer-events: none; z-index: 10;
+  opacity: 0; transform: scale(0.5) rotate(-6deg);
+  transition: opacity 0.2s, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+#combo-display.show { opacity: 1; transform: scale(1) rotate(-2deg); }
+
+/* ── Tap Hint ── */
+#tap-hint {
+  position: absolute; pointer-events: none; z-index: 15;
+  font-family: 'Fredoka One', cursive; font-size: 1rem;
+  color: #fff; 
+  text-shadow: 0 0 10px rgba(255,220,0,0.8), 0 2px 6px rgba(0,0,0,0.8);
+  opacity: 0; transition: opacity 0.2s;
+  white-space: nowrap; letter-spacing: 0.05em;
+}
+#tap-hint.show { opacity: 1; animation: tapPulse 0.55s ease-in-out infinite alternate; }
+@keyframes tapPulse { from { transform: scale(1) translateY(0); } to { transform: scale(1.18) translateY(-3px); } }
+
+/* ── Pause Overlay ── */
+#pause-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(160deg, rgba(8,14,30,0.9) 0%, rgba(20,10,40,0.86) 100%);
+  backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; z-index: 25;
+}
+#pause-overlay.hidden { display: none; }
+#pause-box {
+  background: linear-gradient(170deg, #fff 0%, #f3f6ff 100%);
+  border: 2px solid rgba(255,255,255,0.7); border-bottom: 5px solid rgba(0,0,0,0.2);
+  border-radius: 24px; padding: 26px 40px; text-align: center;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.65);
+  animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+#pause-box h2 { font-family: 'Fredoka One', cursive; font-size: 2rem; color: var(--border-dark); margin-bottom: 14px; }
+#pause-box .pause-sub { font-size: 0.85rem; color: #7a8494; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.04em; }
+
+.hidden { display: none !important; }
+
+/* ── Scrollbar ── */
+.overlay-box::-webkit-scrollbar { width: 5px; }
+.overlay-box::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+.overlay-box::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 10px; }
+
+/* ── Star Animation ── */
+@keyframes starPop { 
+  0% { transform: scale(0) rotate(-20deg); opacity:0; } 
+  60% { transform: scale(1.3) rotate(5deg); opacity:1; } 
+  100% { transform: scale(1) rotate(0); opacity:1; } 
+}
+.star-anim { display: inline-block; }
+.star-anim.pop { animation: starPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <canvas id="gc" width="900" height="520"></canvas>
+  
+  <div id="hud">
+    <div class="hud-left">
+      <div class="panel">
+        <label>Score</label>
+        <div class="val accent" id="ui-score">0</div>
+      </div>
+      <div class="panel">
+        <label>Level</label>
+        <div class="val" id="ui-level">1</div>
+      </div>
+      <div class="panel">
+        <label>Birds</label>
+        <div id="bird-queue"></div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <button class="icon-btn" id="btn-retry-main" title="Retry Level" style="display:none">↺</button>
+      <button class="icon-btn" id="btn-map-main" title="Level Map" style="display:none">🗺️</button>
+      <button class="icon-btn" id="btn-pause" title="Pause" style="display:none">⏸️</button>
+      <button class="icon-btn" id="btn-fullscreen" title="Fullscreen">🔲</button>
+    </div>
+  </div>
+
+  <div id="level-banner">Level 1 — Piggy Tower</div>
+
+  <div id="power-bar-wrap">
+    <div id="power-bar-label">POWER</div>
+    <div id="power-bar-bg"><div id="power-bar-fill"></div></div>
+  </div>
+
+  <div id="combo-display"></div>
+  <div id="tap-hint">👆 TAP!</div>
+
+  <canvas id="next-bird-canvas" width="60" height="60" style="position:absolute;pointer-events:none;z-index:8;opacity:0;transition:opacity 0.3s;"></canvas>
+
+  <div id="pause-overlay" class="hidden">
+    <div id="pause-box">
+      <h2>⏸ Paused</h2>
+      <p class="pause-sub">Take a breather — your progress is saved</p>
+      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px;">
+        <button class="btn gold" id="btn-resume">▶ Resume</button>
+        <button class="btn sec" id="btn-pause-map">🗺️ Map</button>
+        <button class="btn sec" id="btn-pause-retry">↺ Retry</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="scr-start">
+    <div class="overlay-box" style="max-width:640px;">
+      <div style="margin-bottom:6px;">
+        <div style="font-family:'Fredoka One',cursive; font-size:3rem; color:#ffd000; -webkit-text-stroke:2px #8b6508; text-shadow:0 5px 0 #6b4a00, 0 8px 18px rgba(0,0,0,0.45); display:inline-block; transform:rotate(-2deg); line-height:1;">Angry Birds</div>
+      </div>
+      <p style="color:#5a6680; font-size:0.88rem; margin-bottom:8px; font-weight:700;">Drag to aim · Release to launch · Destroy all pigs!</p>
+      <div style="background:linear-gradient(135deg,rgba(255,200,0,0.1),rgba(255,100,0,0.08)); border:1.5px solid rgba(255,150,0,0.3); border-radius:10px; padding:5px 12px; margin-bottom:10px; font-size:0.82rem; font-weight:800; color:#7a4800;">🎯 25 unique levels across 5 epic seasons</div>
+      <div class="start-legend">
+        <div class="leg">🔴 Red — Standard</div>
+        <div class="leg">🟡 Chuck — <b style="color:#c07000">Tap: Speed Dash</b></div>
+        <div class="leg">🔵 Blues — <b style="color:#1a5cbf">Tap: Split x3</b></div>
+        <div class="leg">⚫ Bomb — <b style="color:#333">Tap: Explode</b></div>
+        <div class="leg">⚪ Matilda — <b style="color:#888">Tap: Drop Egg</b></div>
+        <div class="leg">🟢 Hal — <b style="color:#2a7032">Tap: Boomerang</b></div>
+        <div class="leg">🔴 Terence — Heavy hitter</div>
+        <div class="leg" style="border-color:#ff8800; background:rgba(255,120,0,0.08);">🧨 TNT — Chain explosions</div>
+      </div>
+      <button class="btn gold" id="btn-start" style="font-size:1.3rem; padding:12px 38px; margin-top:10px;">🎮 Play Now!</button>
+      <div style="margin-top:8px; font-size:0.68rem; color:#9aa3b4; font-weight:800; letter-spacing:0.08em; text-transform:uppercase;">COMBO KILLS · STAR RATINGS · 5 SEASON WORLDS</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="scr-map">
+    <div class="overlay-box" style="max-width:680px;">
+      <h2 style="margin-bottom:4px;">🗺️ Level Map</h2>
+      <p style="font-size:0.8rem; color:#7a8494; margin-bottom:4px;">Select a level to play</p>
+      <div class="map-grid" id="map-grid"></div>
+      <button class="btn sec" id="btn-map-back" style="margin-top:4px;">← Back</button>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="scr-win">
+    <div class="overlay-box">
+      <h2>🎉 Level Clear!</h2>
+      <div class="stars" id="win-stars">⭐⭐⭐</div>
+      <div class="score-row">
+        <div class="score-card">
+          <div class="sc-label">Level Score</div>
+          <div class="sc-val accent" id="win-score">0</div>
+        </div>
+        <div class="score-card">
+          <div class="sc-label">Total Score</div>
+          <div class="sc-val" id="win-total">0</div>
+        </div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:7px; margin-top:8px;">
+        <button class="btn gold" id="btn-next">Next Level →</button>
+        <button class="btn sec" id="btn-map-win">🗺️ Map</button>
+        <button class="btn sec" id="btn-retry-win">↺ Retry</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="scr-over">
+    <div class="overlay-box">
+      <h2 style="color:#e8321c;">😢 Game Over</h2>
+      <p style="color:#7a8494;">The pigs survived this time...</p>
+      <div class="big-score" id="over-score">0</div>
+      <p id="over-best-msg" style="font-size:0.9rem; color:#7a8494;"></p>
+      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:7px; margin-top:10px;">
+        <button class="btn" id="btn-retry">↺ Try Again</button>
+        <button class="btn sec" id="btn-map-over">🗺️ Map</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="scr-victory">
+    <div class="overlay-box">
+      <h2 style="color:#ffd000; font-size:2.4rem;">🏆 YOU WON!</h2>
+      <p style="font-size:1rem; color:#4a5568; margin-bottom:4px;">All 25 levels cleared — you are the ultimate Bird Slinger!</p>
+      <div class="big-score" id="vic-score">0</div>
+      <p id="vic-best" style="font-size:1rem; color:#f5a623; font-weight:800;"></p>
+      <button class="btn gold" id="btn-play-again" style="margin-top:8px;">🗺️ Back to Map</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const appContainer = document.getElementById('app');
+let scaleX = 1, scaleY = 1, uniformScale = 1;
+
+function resizeApp() {
+  const ww = window.innerWidth;
+  const wh = window.innerHeight;
+  uniformScale = Math.min(ww / 900, wh / 520); 
+  appContainer.style.transform = `translate(-50%, -50%) scale(${uniformScale})`;
+}
+window.addEventListener('resize', resizeApp);
+resizeApp();
+
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+const W = 900, H = 520;
+canvas.width = W; canvas.height = H;
+
+const GND = H * 0.78;
+const GRAVITY = 0.45;
+const SLING = { x: 130, y: GND - 80 };
+const MAX_DRAG = 95;
+const TRAIL_LEN = 28;
+
+let state = 'start', score = 0, totalScore = 0;
+let currentLevel = 0;
+let birdsQueue = [], currentBird = null;
+let blocks = [], pigs = [], particles = [], trails = [];
+let isDragging = false, dragX = SLING.x, dragY = SLING.y;
+let birdUsedCount = 0;
+let clouds = [], stars = [], snowflakes = [];
+let animFrame;
+let levelScore = 0;
+
+let bestScore = 0, maxUnlocked = 0, levelStarsData = {};
+try {
+  bestScore = +localStorage.getItem('abBestUltimate25') || 0;
+  maxUnlocked = +localStorage.getItem('abUnlockedLevels') || 0; 
+  levelStarsData = JSON.parse(localStorage.getItem('abLevelStars') || '{}');
+} catch(e) { console.warn("Local storage blocked."); }
+
+// ── Audio (Web Audio API) ──
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) { try { audioCtx = new AudioCtx(); } catch(e){} }
+  return audioCtx;
+}
+function playTone(freq, type='sine', dur=0.12, vol=0.18, decay=0.1) {
+  try {
+    const ac = getAudioCtx(); if(!ac) return;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = type; osc.frequency.setValueAtTime(freq, ac.currentTime);
+    gain.gain.setValueAtTime(vol, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+    osc.start(); osc.stop(ac.currentTime + dur);
+  } catch(e) {}
+}
+function sfxLaunch() { playTone(220,'sawtooth',0.18,0.12); }
+function sfxHit()    { playTone(120,'square',0.15,0.2); playTone(80,'triangle',0.25,0.12); }
+function sfxPigDie() { playTone(300,'sine',0.1,0.2); setTimeout(()=>playTone(200,'sine',0.1,0.2),80); setTimeout(()=>playTone(150,'sine',0.15,0.15),160); }
+function sfxExplode(){ playTone(60,'sawtooth',0.35,0.35); playTone(100,'square',0.2,0.25); }
+function sfxWin()    { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.3,0.25),i*140)); }
+function sfxTap()    { playTone(440,'sine',0.08,0.15); }
+
+// ── Combo system ──
+let comboCount = 0, comboTimer = 0;
+const COMBO_WINDOW = 120; // frames
+
+
+
+function saveProgress() {
+  try {
+    localStorage.setItem('abBestUltimate25', bestScore);
+    localStorage.setItem('abLevelStars', JSON.stringify(levelStarsData));
+    localStorage.setItem('abUnlockedLevels', maxUnlocked);
+  } catch(e) {}
+}
+
+// ── Pause ──
+let paused = false;
+function setPaused(val) {
+  paused = val;
+  const po = document.getElementById('pause-overlay');
+  const pb = document.getElementById('btn-pause');
+  if(paused) {
+    po.classList.remove('hidden');
+    pb.textContent = '▶';
+  } else {
+    po.classList.add('hidden');
+    pb.textContent = '⏸️';
+  }
+}
+
+
+let shakeFrames = 0;
+let shakeMag = 0;
+
+const LEVELS = [
+  // SEASON 1: GRASSLANDS (Classic Towers & Basement Attacks)
+  {
+    name:'Piggy Tower',
+    bg:{sky1:'#87ceeb',sky2:'#b8e4f7',gnd:'#4caf50'},
+    birds:['normal','normal','normal','bomb'],
+    layout:[
+      // Basement Pillars (Wood)
+      {t:'wood',x:520,y:GND-80,w:22,h:80}, {t:'wood',x:660,y:GND-80,w:22,h:80},
+      // Floor 1
+      {t:'wood',x:500,y:GND-102,w:200,h:22},
+      // Floor 1 Pillars (Glass - Weak!)
+      {t:'glass',x:540,y:GND-182,w:22,h:80}, {t:'glass',x:640,y:GND-182,w:22,h:80},
+      // Floor 2
+      {t:'wood',x:520,y:GND-204,w:160,h:22},
+      // Floor 2 Pillars (Stone)
+      {t:'stone',x:560,y:GND-264,w:22,h:60}, {t:'stone',x:620,y:GND-264,w:22,h:60},
+      // Roof
+      {t:'stone',x:540,y:GND-286,w:120,h:22}
+    ],
+    pigs:[ {x:601,y:GND-40,r:22,hp:1}, {x:601,y:GND-140,r:20,hp:1}, {x:601,y:GND-240,r:18,hp:1} ]
+  },
+  {
+    name:'Glass Foundation',
+    bg:{sky1:'#7a9cc4',sky2:'#c5dff0',gnd:'#388e3c'},
+    birds:['yellow','normal','normal','bomb'],
+    layout:[
+      // Weak Glass Basement
+      {t:'glass',x:480,y:GND-100,w:22,h:100}, {t:'glass',x:600,y:GND-100,w:22,h:100}, {t:'glass',x:720,y:GND-100,w:22,h:100},
+      // Massive Stone Ceiling
+      {t:'stone',x:460,y:GND-122,w:300,h:22},
+      // Top structure
+      {t:'wood',x:500,y:GND-182,w:22,h:60}, {t:'wood',x:700,y:GND-182,w:22,h:60},
+      {t:'stone',x:480,y:GND-204,w:260,h:22},
+      {t:'wood',x:611,y:GND-264,w:22,h:60}
+    ],
+    pigs:[ {x:540,y:GND-50,r:20,hp:1}, {x:660,y:GND-50,r:20,hp:1}, {x:611,y:GND-150,r:22,hp:2} ]
+  },
+  {
+    name:'TNT Basement',
+    bg:{sky1:'#ffb74d',sky2:'#ffe0b2',gnd:'#e65100'},
+    birds:['blue','bomb','yellow'],
+    layout:[
+      {t:'wood',x:450,y:GND-100,w:22,h:100}, {t:'tnt',x:500,y:GND-50,w:50,h:50}, {t:'wood',x:570,y:GND-100,w:22,h:100},
+      {t:'stone',x:430,y:GND-122,w:180,h:22},
+      {t:'glass',x:480,y:GND-182,w:22,h:60}, {t:'glass',x:540,y:GND-182,w:22,h:60},
+      {t:'wood',x:460,y:GND-204,w:120,h:22}
+    ],
+    pigs:[ {x:521,y:GND-150,r:20,hp:1}, {x:521,y:GND-230,r:20,hp:1} ]
+  },
+  {
+    name:'Boomerang Back-Wall',
+    bg:{sky1:'#81c784',sky2:'#c8e6c9',gnd:'#2e7d32'},
+    birds:['green','green','normal','big'],
+    layout:[
+      // Tall protective front wall
+      {t:'stone',x:400,y:GND-200,w:22,h:200}, 
+      // Weak back foundation to target with boomerang
+      {t:'glass',x:550,y:GND-80,w:22,h:80}, {t:'glass',x:650,y:GND-80,w:22,h:80}, 
+      {t:'stone',x:530,y:GND-102,w:160,h:22},
+      {t:'wood',x:550,y:GND-162,w:22,h:60}, {t:'wood',x:650,y:GND-162,w:22,h:60},
+      {t:'stone',x:530,y:GND-184,w:160,h:22},
+    ],
+    pigs:[ {x:611,y:GND-40,r:20,hp:1}, {x:611,y:GND-140,r:22,hp:2} ]
+  },
+  {
+    name:'Jungle Scaffolding',
+    bg:{sky1:'#4a7c59',sky2:'#a8d5a2',gnd:'#2d6a2d'},
+    birds:['big','normal','yellow','bomb','white'],
+    layout:[
+      {t:'wood',x:450,y:GND-80,w:22,h:80},{t:'wood',x:550,y:GND-80,w:22,h:80},{t:'wood',x:650,y:GND-80,w:22,h:80},
+      {t:'wood',x:430,y:GND-102,w:260,h:22},
+      {t:'stone',x:450,y:GND-182,w:22,h:80},{t:'stone',x:550,y:GND-182,w:22,h:80},{t:'stone',x:650,y:GND-182,w:22,h:80},
+      {t:'stone',x:430,y:GND-204,w:260,h:22},
+      {t:'tnt',x:535,y:GND-254,w:50,h:50}
+    ],
+    pigs:[ {x:500,y:GND-40,r:20,hp:1}, {x:600,y:GND-40,r:20,hp:1}, {x:500,y:GND-140,r:22,hp:2}, {x:600,y:GND-140,r:22,hp:2} ]
+  },
+  // SEASON 2: CAVERNS (Deep Structures)
+  {
+    name:'Deep Shaft',
+    bg:{sky1:'#ff7043',sky2:'#ffb74d',gnd:'#5d4037'},
+    birds:['yellow','blue','green','big'],
+    layout:[
+      {t:'stone',x:450,y:GND-150,w:22,h:150}, {t:'stone',x:600,y:GND-150,w:22,h:150},
+      {t:'glass',x:472,y:GND-22,w:128,h:22}, // Glass floor in shaft
+      {t:'tnt',x:511,y:GND-72,w:50,h:50},
+      {t:'stone',x:450,y:GND-172,w:172,h:22}, // Roof
+    ],
+    pigs:[ {x:536,y:GND-100,r:20,hp:2} ]
+  },
+  {
+    name:'Explosive Pillars',
+    bg:{sky1:'#212121',sky2:'#424242',gnd:'#3e2723'},
+    birds:['bomb','green','normal'],
+    layout:[
+      {t:'wood',x:450,y:GND-80,w:22,h:80}, {t:'wood',x:550,y:GND-80,w:22,h:80}, {t:'wood',x:650,y:GND-80,w:22,h:80},
+      {t:'stone',x:430,y:GND-102,w:260,h:22},
+      {t:'tnt',x:450,y:GND-152,w:50,h:50}, {t:'tnt',x:620,y:GND-152,w:50,h:50},
+      {t:'glass',x:550,y:GND-162,w:22,h:60},
+      {t:'stone',x:430,y:GND-184,w:260,h:22}
+    ],
+    pigs:[ {x:500,y:GND-40,r:22,hp:2}, {x:600,y:GND-40,r:18,hp:1}, {x:561,y:GND-120,r:20,hp:2} ]
+  },
+  {
+    name:'Piggy Pyramid',
+    bg:{sky1:'#1a0533',sky2:'#4a1a6b',gnd:'#1b5e20'},
+    birds:['bomb','green','white','big','yellow','bomb'],
+    layout:[
+      {t:'wood',x:420,y:GND-60,w:22,h:60},{t:'wood',x:520,y:GND-60,w:22,h:60},{t:'wood',x:620,y:GND-60,w:22,h:60},{t:'wood',x:720,y:GND-60,w:22,h:60},
+      {t:'stone',x:400,y:GND-82,w:360,h:22},
+      {t:'glass',x:470,y:GND-142,w:22,h:60},{t:'glass',x:570,y:GND-142,w:22,h:60},{t:'glass',x:670,y:GND-142,w:22,h:60},
+      {t:'stone',x:450,y:GND-164,w:260,h:22},
+      {t:'wood',x:520,y:GND-224,w:22,h:60},{t:'wood',x:620,y:GND-224,w:22,h:60},
+      {t:'stone',x:500,y:GND-246,w:160,h:22},
+      {t:'tnt',x:556,y:GND-296,w:50,h:50}
+    ],
+    pigs:[ {x:470,y:GND-40,r:20,hp:2},{x:570,y:GND-40,r:24,hp:3},{x:670,y:GND-40,r:20,hp:2}, {x:520,y:GND-110,r:20,hp:2},{x:620,y:GND-110,r:20,hp:2}, {x:581,y:GND-200,r:24,hp:4} ]
+  },
+  {
+    name:'Ultimate King Pig',
+    bg:{sky1:'#b71c1c',sky2:'#f44336',gnd:'#212121'},
+    birds:['bomb','big','green','yellow','blue','bomb','white'],
+    layout:[
+      {t:'glass',x:420,y:GND-80,w:22,h:80},{t:'glass',x:500,y:GND-80,w:22,h:80},{t:'glass',x:660,y:GND-80,w:22,h:80},{t:'glass',x:740,y:GND-80,w:22,h:80},
+      {t:'tnt',x:550,y:GND-50,w:50,h:50}, // Huge explosive core
+      {t:'stone',x:400,y:GND-102,w:380,h:22},
+      {t:'wood',x:440,y:GND-162,w:22,h:60},{t:'stone',x:570,y:GND-162,w:22,h:60},{t:'wood',x:700,y:GND-162,w:22,h:60},
+      {t:'stone',x:420,y:GND-184,w:320,h:22},
+      {t:'wood',x:460,y:GND-244,w:22,h:60},{t:'tnt',x:550,y:GND-234,w:50,h:50},{t:'wood',x:660,y:GND-244,w:22,h:60},
+      {t:'stone',x:440,y:GND-266,w:260,h:22},
+    ],
+    pigs:[ {x:460,y:GND-40,r:20,hp:2}, {x:700,y:GND-40,r:20,hp:2}, {x:500,y:GND-130,r:22,hp:3}, {x:640,y:GND-130,r:22,hp:3}, {x:575,y:GND-310,r:38,hp:8} ]
+  },
+  {
+    name:'Sky Fort',
+    bg:{sky1:'#87ceeb',sky2:'#b8e4f7',gnd:'#4caf50'},
+    birds:['yellow','white','blue','bomb'],
+    layout:[
+      {t:'glass',x:450,y:GND-100,w:22,h:100},{t:'glass',x:550,y:GND-100,w:22,h:100},
+      {t:'wood',x:430,y:GND-122,w:160,h:22},
+      {t:'tnt',x:485,y:GND-172,w:50,h:50},
+      {t:'wood',x:650,y:GND-100,w:22,h:100},{t:'wood',x:750,y:GND-100,w:22,h:100},
+      {t:'stone',x:630,y:GND-122,w:160,h:22}
+    ],
+    pigs:[ {x:500,y:GND-40,r:20,hp:2}, {x:700,y:GND-40,r:20,hp:2}, {x:700,y:GND-150,r:20,hp:2} ]
+  },
+
+  // SEASON 3: WINTER WONDERLAND
+  {
+    name:'Frostbite Peaks',
+    bg:{sky1:'#c5e8ff',sky2:'#e8f4ff',gnd:'#80d8ff'},
+    birds:['blue','blue','normal','yellow'],
+    layout:[
+      {t:'ice',x:450,y:GND-80,w:22,h:80},{t:'ice',x:550,y:GND-80,w:22,h:80},{t:'ice',x:650,y:GND-80,w:22,h:80},{t:'ice',x:750,y:GND-80,w:22,h:80},
+      {t:'ice',x:430,y:GND-102,w:360,h:22},
+      {t:'ice',x:500,y:GND-182,w:22,h:80},{t:'ice',x:700,y:GND-182,w:22,h:80},
+      {t:'ice',x:480,y:GND-204,w:260,h:22},
+      {t:'tnt',x:585,y:GND-254,w:50,h:50}
+    ],
+    pigs:[ {x:500,y:GND-40,r:20,hp:1}, {x:600,y:GND-40,r:20,hp:1}, {x:700,y:GND-40,r:20,hp:1}, {x:610,y:GND-140,r:22,hp:2} ]
+  },
+  {
+    name:'Snow Bridges',
+    bg:{sky1:'#c5e8ff',sky2:'#e8f4ff',gnd:'#80d8ff'},
+    birds:['white','green','big'],
+    layout:[
+      {t:'stone',x:400,y:GND-150,w:22,h:150},
+      {t:'ice',x:422,y:GND-150,w:150,h:22},
+      {t:'stone',x:650,y:GND-250,w:22,h:250},
+      {t:'ice',x:672,y:GND-250,w:150,h:22},
+      {t:'tnt',x:500,y:GND-50,w:50,h:50}
+    ],
+    pigs:[ {x:500,y:GND-180,r:20,hp:2}, {x:750,y:GND-280,r:20,hp:2}, {x:450,y:GND-50,r:18,hp:1} ]
+  },
+  {
+    name:'Glacier Collapse',
+    bg:{sky1:'#001f3f',sky2:'#0074D9',gnd:'#7FDBFF'},
+    birds:['bomb','bomb','white','blue'],
+    layout:[
+      {t:'ice',x:500,y:GND-60,w:22,h:60},{t:'ice',x:560,y:GND-100,w:22,h:100},
+      {t:'ice',x:620,y:GND-140,w:22,h:140},{t:'ice',x:680,y:GND-180,w:22,h:180},
+      {t:'tnt',x:720,y:GND-50,w:50,h:50},{t:'tnt',x:440,y:GND-50,w:50,h:50},
+      {t:'wood',x:480,y:GND-202,w:240,h:22} // Giant plank resting precariously
+    ],
+    pigs:[ {x:511,y:GND-230,r:20,hp:1}, {x:591,y:GND-230,r:20,hp:1}, {x:671,y:GND-230,r:20,hp:1} ]
+  },
+  {
+    name:'Ice Fort',
+    bg:{sky1:'#e0f7fa',sky2:'#b2ebf2',gnd:'#4dd0e1'},
+    birds:['green','yellow','blue','big'],
+    layout:[
+      {t:'ice',x:470,y:GND-80,w:22,h:80},{t:'ice',x:610,y:GND-80,w:22,h:80},{t:'ice',x:710,y:GND-80,w:22,h:80},
+      {t:'stone',x:450,y:GND-102,w:300,h:22},
+      {t:'tnt',x:525,y:GND-72,w:50,h:50},{t:'tnt',x:645,y:GND-72,w:50,h:50},
+      {t:'ice',x:540,y:GND-162,w:22,h:60},{t:'ice',x:640,y:GND-162,w:22,h:60},
+      {t:'stone',x:520,y:GND-184,w:160,h:22},
+    ],
+    pigs:[ {x:540,y:GND-40,r:22,hp:2}, {x:660,y:GND-40,r:22,hp:2}, {x:600,y:GND-130,r:20,hp:2} ]
+  },
+  {
+    name:'Yeti Pig (Winter Boss)',
+    bg:{sky1:'#001f3f',sky2:'#0074D9',gnd:'#7FDBFF'},
+    birds:['bomb','blue','white','big','yellow','bomb','green'],
+    layout:[
+      {t:'ice',x:520,y:GND-80,w:22,h:80},{t:'ice',x:640,y:GND-80,w:22,h:80},
+      {t:'tnt',x:555,y:GND-50,w:50,h:50},
+      {t:'stone',x:500,y:GND-102,w:180,h:22},
+      {t:'wood',x:520,y:GND-182,w:22,h:80},{t:'wood',x:640,y:GND-182,w:22,h:80},
+      {t:'stone',x:500,y:GND-204,w:180,h:22},
+      {t:'stone',x:520,y:GND-466,w:22,h:64},{t:'stone',x:660,y:GND-466,w:22,h:64},
+      {t:'stone',x:520,y:GND-528,w:162,h:22}
+    ],
+    pigs:[ {x:500,y:GND-58,r:20,hp:2}, {x:700,y:GND-58,r:20,hp:2}, {x:480,y:GND-184,r:22,hp:3}, {x:720,y:GND-184,r:22,hp:3}, {x:500,y:GND-310,r:20,hp:2}, {x:700,y:GND-310,r:20,hp:2}, {x:600,y:GND-460,r:42,hp:10} ]
+  },
+
+  // SEASON 4: DEEP SPACE
+  {
+    name:'Asteroid Field',
+    bg:{sky1:'#0b0d17',sky2:'#1a1a2e',gnd:'#4b4b4b'},
+    birds:['normal','bomb','yellow','blue'],
+    layout:[
+      {t:'glass',x:450,y:GND-100,w:22,h:100},{t:'glass',x:550,y:GND-100,w:22,h:100},{t:'glass',x:650,y:GND-100,w:22,h:100},{t:'glass',x:750,y:GND-100,w:22,h:100},
+      {t:'stone',x:430,y:GND-122,w:360,h:22},
+      {t:'tnt',x:500,y:GND-172,w:50,h:50},{t:'tnt',x:680,y:GND-172,w:50,h:50},
+      {t:'wood',x:480,y:GND-232,w:22,h:60},{t:'wood',x:720,y:GND-232,w:22,h:60},
+      {t:'stone',x:460,y:GND-254,w:300,h:22}
+    ],
+    pigs:[ {x:500,y:GND-40,r:20,hp:2}, {x:600,y:GND-40,r:20,hp:2}, {x:700,y:GND-40,r:20,hp:2}, {x:600,y:GND-150,r:22,hp:3} ]
+  },
+  {
+    name:'Space Station',
+    bg:{sky1:'#160024',sky2:'#2d004d',gnd:'#3d3d3d'},
+    birds:['green','blue','white','big'],
+    layout:[
+      {t:'stone',x:400,y:GND-200,w:22,h:200}, {t:'stone',x:750,y:GND-200,w:22,h:200},
+      {t:'glass',x:422,y:GND-200,w:150,h:22}, {t:'glass',x:600,y:GND-200,w:150,h:22},
+      {t:'tnt',x:561,y:GND-250,w:50,h:50},
+      {t:'wood',x:550,y:GND-310,w:22,h:60},{t:'wood',x:600,y:GND-310,w:22,h:60},
+      {t:'stone',x:530,y:GND-332,w:112,h:22}
+    ],
+    pigs:[ {x:500,y:GND-230,r:20,hp:2}, {x:670,y:GND-230,r:20,hp:2}, {x:586,y:GND-360,r:22,hp:3} ]
+  },
+  {
+    name:'Comet Crash',
+    bg:{sky1:'#2b0000',sky2:'#4a0000',gnd:'#292929'},
+    birds:['bomb','bomb','bomb','normal'],
+    layout:[
+      {t:'stone',x:400,y:GND-22,w:400,h:22},
+      {t:'tnt',x:420,y:GND-72,w:50,h:50},{t:'tnt',x:480,y:GND-72,w:50,h:50},{t:'tnt',x:540,y:GND-72,w:50,h:50},{t:'tnt',x:600,y:GND-72,w:50,h:50},{t:'tnt',x:660,y:GND-72,w:50,h:50},{t:'tnt',x:720,y:GND-72,w:50,h:50},
+      {t:'glass',x:400,y:GND-152,w:22,h:80},{t:'glass',x:480,y:GND-152,w:22,h:80},{t:'glass',x:560,y:GND-152,w:22,h:80},{t:'glass',x:640,y:GND-152,w:22,h:80},{t:'glass',x:720,y:GND-152,w:22,h:80},
+      {t:'stone',x:380,y:GND-174,w:400,h:22},
+      {t:'wood',x:550,y:GND-234,w:22,h:60}, {t:'wood',x:620,y:GND-234,w:22,h:60},
+      {t:'stone',x:530,y:GND-256,w:130,h:22}
+    ],
+    pigs:[ {x:450,y:GND-100,r:20,hp:2}, {x:530,y:GND-100,r:20,hp:2}, {x:610,y:GND-100,r:20,hp:2}, {x:690,y:GND-100,r:20,hp:2}, {x:595,y:GND-200,r:22,hp:3} ]
+  },
+  {
+    name:'Lunar Base',
+    bg:{sky1:'#000000',sky2:'#1a1a2e',gnd:'#555'},
+    birds:['big','yellow','green','white','blue'],
+    layout:[
+      {t:'glass',x:450,y:GND-80,w:22,h:80},{t:'glass',x:530,y:GND-80,w:22,h:80},{t:'glass',x:610,y:GND-80,w:22,h:80},{t:'glass',x:690,y:GND-80,w:22,h:80},
+      {t:'stone',x:430,y:GND-102,w:300,h:22},
+      {t:'wood',x:480,y:GND-162,w:22,h:60},{t:'tnt',x:565,y:GND-152,w:50,h:50},{t:'wood',x:650,y:GND-162,w:22,h:60},
+      {t:'stone',x:460,y:GND-184,w:230,h:22},
+      {t:'glass',x:510,y:GND-264,w:22,h:80},{t:'glass',x:610,y:GND-264,w:22,h:80},
+      {t:'stone',x:490,y:GND-286,w:160,h:22},
+    ],
+    pigs:[ {x:490,y:GND-40,r:20,hp:1}, {x:650,y:GND-40,r:20,hp:1}, {x:520,y:GND-130,r:20,hp:2}, {x:610,y:GND-130,r:20,hp:2}, {x:570,y:GND-220,r:22,hp:3} ]
+  },
+  {
+    name:'Galactic Emperor',
+    bg:{sky1:'#1a0000',sky2:'#3a0000',gnd:'#333'},
+    birds:['bomb','blue','yellow','green','white','big','bomb','normal'],
+    layout:[
+      {t:'glass',x:420,y:GND-100,w:22,h:100},{t:'stone',x:550,y:GND-100,w:22,h:100},{t:'glass',x:750,y:GND-100,w:22,h:100},
+      {t:'stone',x:400,y:GND-122,w:380,h:22},
+      {t:'wood',x:440,y:GND-182,w:22,h:60},{t:'tnt',x:540,y:GND-172,w:50,h:50},{t:'wood',x:730,y:GND-182,w:22,h:60},
+      {t:'stone',x:420,y:GND-204,w:350,h:22},
+      {t:'stone',x:460,y:GND-284,w:22,h:80},{t:'tnt',x:570,y:GND-254,w:50,h:50},{t:'stone',x:710,y:GND-284,w:22,h:80},
+      {t:'stone',x:440,y:GND-306,w:310,h:22},
+      {t:'glass',x:520,y:GND-366,w:22,h:60},{t:'glass',x:660,y:GND-366,w:22,h:60},
+      {t:'stone',x:500,y:GND-388,w:200,h:22},
+      {t:'tnt',x:575,y:GND-438,w:50,h:50}
+    ],
+    pigs:[ {x:480,y:GND-40,r:20,hp:2}, {x:680,y:GND-40,r:20,hp:2}, {x:490,y:GND-150,r:22,hp:3}, {x:680,y:GND-150,r:22,hp:3}, {x:510,y:GND-230,r:20,hp:2}, {x:660,y:GND-230,r:20,hp:2}, {x:600,y:GND-340,r:42,hp:10} ]
+  },
+
+  // SEASON 5: VOLCANO CORE
+  {
+    name:'Volcano Entry',
+    bg:{sky1:'#4a0000',sky2:'#8a0303',gnd:'#1c0000'},
+    birds:['blue','bomb','yellow','big'],
+    layout:[
+      {t:'glass',x:450,y:GND-80,w:22,h:80},{t:'glass',x:550,y:GND-80,w:22,h:80},{t:'glass',x:650,y:GND-80,w:22,h:80},{t:'glass',x:750,y:GND-80,w:22,h:80},
+      {t:'stone',x:430,y:GND-102,w:360,h:22},
+      {t:'wood',x:480,y:GND-182,w:22,h:80},{t:'tnt',x:600,y:GND-152,w:50,h:50},{t:'wood',x:720,y:GND-182,w:22,h:80},
+      {t:'stone',x:460,y:GND-204,w:300,h:22}
+    ],
+    pigs:[ {x:500,y:GND-40,r:20,hp:2}, {x:600,y:GND-40,r:20,hp:2}, {x:700,y:GND-40,r:20,hp:2}, {x:500,y:GND-140,r:22,hp:2}, {x:700,y:GND-140,r:22,hp:2} ]
+  },
+  {
+    name:'Lava Bridges',
+    bg:{sky1:'#3e0000',sky2:'#8a0303',gnd:'#2e0000'},
+    birds:['green','white','bomb'],
+    layout:[
+      {t:'stone',x:420,y:GND-150,w:22,h:150},
+      {t:'wood',x:442,y:GND-150,w:180,h:22},
+      {t:'glass',x:600,y:GND-80,w:22,h:80}, {t:'glass',x:700,y:GND-80,w:22,h:80},
+      {t:'stone',x:580,y:GND-102,w:160,h:22},
+      {t:'tnt',x:625,y:GND-152,w:50,h:50}
+    ],
+    pigs:[ {x:520,y:GND-180,r:22,hp:2}, {x:650,y:GND-40,r:20,hp:1} ]
+  },
+  {
+    name:'Obsidian Tower',
+    bg:{sky1:'#5a0000',sky2:'#9a0505',gnd:'#1c0000'},
+    birds:['yellow','blue','big','normal'],
+    layout:[
+      {t:'wood',x:500,y:GND-80,w:22,h:80},{t:'wood',x:600,y:GND-80,w:22,h:80},
+      {t:'stone',x:480,y:GND-102,w:160,h:22},
+      {t:'glass',x:500,y:GND-182,w:22,h:80},{t:'glass',x:600,y:GND-182,w:22,h:80},
+      {t:'stone',x:480,y:GND-204,w:160,h:22},
+      {t:'stone',x:520,y:GND-284,w:22,h:80},{t:'stone',x:580,y:GND-284,w:22,h:80},
+      {t:'stone',x:500,y:GND-306,w:120,h:22}
+    ],
+    pigs:[ {x:550,y:GND-40,r:20,hp:2}, {x:550,y:GND-140,r:20,hp:2}, {x:550,y:GND-240,r:24,hp:3} ]
+  },
+  {
+    name:'Double Trouble',
+    bg:{sky1:'#3e0000',sky2:'#8a0303',gnd:'#2e0000'},
+    birds:['white','green','bomb'],
+    layout:[
+      {t:'glass',x:450,y:GND-100,w:22,h:100},{t:'glass',x:520,y:GND-100,w:22,h:100},
+      {t:'stone',x:430,y:GND-122,w:130,h:22},
+      {t:'wood',x:650,y:GND-100,w:22,h:100},{t:'wood',x:720,y:GND-100,w:22,h:100},
+      {t:'stone',x:630,y:GND-122,w:130,h:22},
+      {t:'tnt',x:585,y:GND-50,w:50,h:50}
+    ],
+    pigs:[ {x:485,y:GND-40,r:20,hp:1}, {x:685,y:GND-40,r:20,hp:1}, {x:485,y:GND-150,r:22,hp:2}, {x:685,y:GND-150,r:22,hp:2} ]
+  },
+  {
+    name:'Magma Lord (Ultimate Boss)',
+    bg:{sky1:'#660000',sky2:'#ff3300',gnd:'#111'},
+    birds:['bomb','big','blue','yellow','white','green','bomb'],
+    layout:[
+      {t:'glass',x:420,y:GND-100,w:22,h:100},{t:'glass',x:520,y:GND-100,w:22,h:100},{t:'glass',x:620,y:GND-100,w:22,h:100},{t:'glass',x:720,y:GND-100,w:22,h:100},
+      {t:'stone',x:400,y:GND-122,w:360,h:22},
+      {t:'wood',x:450,y:GND-202,w:22,h:80},{t:'wood',x:550,y:GND-202,w:22,h:80},{t:'wood',x:690,y:GND-202,w:22,h:80},
+      {t:'tnt',x:600,y:GND-172,w:50,h:50},
+      {t:'stone',x:430,y:GND-224,w:300,h:22},
+      {t:'stone',x:480,y:GND-304,w:22,h:80},{t:'stone',x:660,y:GND-304,w:22,h:80},
+      {t:'stone',x:460,y:GND-326,w:240,h:22},
+      {t:'tnt',x:550,y:GND-376,w:50,h:50}
+    ],
+    pigs:[ {x:470,y:GND-40,r:20,hp:2}, {x:570,y:GND-40,r:20,hp:2}, {x:670,y:GND-40,r:20,hp:2}, 
+           {x:500,y:GND-150,r:22,hp:3}, {x:620,y:GND-150,r:22,hp:3}, 
+           {x:570,y:GND-260,r:42,hp:12} ]
+  }
+];
+
+const MATERIALS = {
+  wood: {fill:'#c8860a',stroke:'#7a4f00',hp:3,pts:10,crackColor:'#7a4f00'},
+  glass:{fill:'#aaeeff',stroke:'#66bbcc',hp:1,pts:15,crackColor:'#99ddee'},
+  stone:{fill:'#9e9e9e',stroke:'#555',hp:5,pts:8,crackColor:'#666'},
+  ice:  {fill:'#d0f4ff',stroke:'#80d4ee',hp:2,pts:12,crackColor:'#aee'},
+  tnt:  {fill:'#d32f2f',stroke:'#b71c1c',hp:1,pts:50,crackColor:'#ff5252'},
+};
+
+const BIRD_TYPES = {
+  normal:   {emoji:'🔴',color:'#e02020',r:20,damage:2,special:null}, 
+  yellow:   {emoji:'🟡',color:'#fdd835',r:18,damage:3,special:'dash'}, 
+  blue:     {emoji:'🔵',color:'#2196f3',r:14,damage:1,special:'split'}, 
+  bomb:     {emoji:'⚫',color:'#1a1a1a',r:22,damage:0,special:'bomb'}, 
+  white:    {emoji:'⚪',color:'#e0e0e0',r:24,damage:2,special:'egg'}, 
+  green:    {emoji:'🟢',color:'#4caf50',r:19,damage:3,special:'boomerang'},
+  big:      {emoji:'🔴',color:'#cc1a00',r:28,damage:5,special:null}, 
+};
+
+function initScenery(bg){
+  clouds=[];stars=[];snowflakes=[];
+  for(let i=0;i<6;i++) clouds.push({x:Math.random()*W,y:30+Math.random()*120,r:25+Math.random()*30,speed:.2+Math.random()*.3});
+  if(bg.sky1.startsWith('#1')||bg.sky1.startsWith('#4')||bg.sky1.startsWith('#2')||bg.sky1.startsWith('#0')){
+    for(let i=0;i<60;i++) stars.push({x:Math.random()*W,y:Math.random()*(H*.5),r:Math.random()*1.5+.5});
+  }
+  if(bg.sky1 === '#c5e8ff' || bg.sky1 === '#e0f7fa' || bg.sky1 === '#001f3f') { 
+     for(let i=0;i<40;i++) snowflakes.push({x:Math.random()*W, y:Math.random()*H, r:Math.random()*2+1, speed:Math.random()*1+0.5});
+  }
+}
+
+function showMap(){
+  state = 'map';
+  document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+  document.getElementById('scr-map').classList.remove('hidden');
+  
+  const grid = document.getElementById('map-grid');
+  grid.innerHTML = '';
+  
+  const seasons = [
+    { name: '🌱 Season 1: Grasslands', start: 0, end: 4 },
+    { name: '🌋 Season 2: Deep Caverns', start: 5, end: 9 },
+    { name: '❄️ Season 3: Winter Wonderland', start: 10, end: 14 },
+    { name: '🌌 Season 4: Deep Space', start: 15, end: 19 },
+    { name: '🔥 Season 5: Volcano Core', start: 20, end: 24 }
+  ];
+  let currentSeasonIdx = -1;
+  
+  LEVELS.forEach((lv, i) => {
+    let targetSeason = seasons.find(s => i >= s.start && i <= s.end);
+    let seasonIdx = targetSeason ? seasons.indexOf(targetSeason) + 1 : 1;
+    if (targetSeason && seasons.indexOf(targetSeason) > currentSeasonIdx) {
+      currentSeasonIdx = seasons.indexOf(targetSeason);
+      const st = document.createElement('div');
+      st.className = 'season-title s' + seasonIdx;
+      st.textContent = targetSeason.name;
+      grid.appendChild(st);
+    }
+
+    const btn = document.createElement('div');
+    const isLocked = i > maxUnlocked;
+    btn.className = 'map-node season-' + seasonIdx + (isLocked ? ' locked' : '');
+    
+    if(isLocked) {
+      btn.innerHTML = '🔒';
+    } else {
+      btn.innerHTML = i + 1;
+      const stars = levelStarsData[i] || 0;
+      if(stars > 0){
+        const st = document.createElement('div');
+        st.className = 'map-stars';
+        st.textContent = '⭐'.repeat(stars);
+        btn.appendChild(st);
+      }
+      btn.onclick = () => { totalScore = 0; startLevel(i); }; 
+    }
+    grid.appendChild(btn);
+  });
+}
+
+function buildLevel(idx){
+  const lv = LEVELS[idx];
+  blocks = lv.layout.map(b=>({
+    x:b.x,y:b.y,w:b.w,h:b.h,
+    mat:MATERIALS[b.t],type:b.t,
+    hp:b.hp||MATERIALS[b.t].hp,maxHp:b.hp||MATERIALS[b.t].hp,
+    destroyed:false,cracks:[], detonated:false
+  }));
+  pigs = lv.pigs.map(p=>({
+    x:p.x,y:p.y,r:p.r,hp:p.hp,maxHp:p.hp,
+    destroyed:false,hit:false,hitTimer:0
+  }));
+  birdsQueue = lv.birds.map(t=>({type:t,...BIRD_TYPES[t],used:false}));
+  birdUsedCount=0;
+  splitBirds=[];
+  currentBird=spawnBird();
+  particles=[];trails=[];
+  isDragging=false;dragX=SLING.x;dragY=SLING.y;
+  initScenery(lv.bg);
+  levelScore=0;
+  shakeFrames=0;
+  
+  const uiLevel = document.getElementById('ui-level');
+  if(uiLevel) uiLevel.textContent = idx+1;
+  const banner = document.getElementById('level-banner');
+  if(banner) banner.textContent = `Level ${idx+1} — ${lv.name}`;
+  updateHUD();
+  renderBirdQueue();
+}
+
+function spawnBird(){
+  if(birdUsedCount>=birdsQueue.length)return null;
+  const b=birdsQueue[birdUsedCount];
+  return {
+    x:SLING.x,y:SLING.y, vx:0,vy:0,
+    type:b.type, color:b.color, r:b.r, damage:b.damage, special:b.special,
+    launched:false, alive:true, activated:false, splitDone:false,
+  };
+}
+
+function updateHUD(){
+  const sc = document.getElementById('ui-score');
+  if(sc) sc.textContent = totalScore+levelScore;
+}
+function renderBirdQueue(){
+  const el=document.getElementById('bird-queue');
+  if(!el) return;
+  el.innerHTML='';
+  birdsQueue.forEach((b,i)=>{
+    const d=document.createElement('div');
+    d.className='bq-bird'+(i<birdUsedCount?' used':'');
+    d.textContent=b.emoji;
+    el.appendChild(d);
+  });
+}
+
+function boom(x,y,color,count=20,speed=5){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2,s=(Math.random()+.5)*speed;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,
+      r:3+Math.random()*5,life:1,decay:.025+Math.random()*.02,
+      color,gravity:.2});
+  }
+}
+function smokeAt(x,y){
+  for(let i=0;i<12;i++){
+    const a=Math.random()*Math.PI*2;
+    particles.push({x,y,vx:Math.cos(a)*(Math.random()*2),vy:Math.sin(a)*(Math.random()*2)-2,
+      r:8+Math.random()*10,life:.9,decay:.015,color:'rgba(180,180,180,0.6)',gravity:-.05,smoke:true});
+  }
+}
+
+function drawRoundRect(ctx,x,y,w,h,r){
+  if(ctx.roundRect) {
+      ctx.beginPath(); ctx.roundRect(x,y,w,h,r);
+  } else {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+  }
+}
+
+function drawBlock(b){
+  if(b.destroyed)return;
+  const m=b.mat;
+  const hpRatio=b.hp/b.maxHp;
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,0.3)';ctx.shadowBlur=6;ctx.shadowOffsetY=3;
+  ctx.fillStyle=m.fill;
+  drawRoundRect(ctx,b.x,b.y,b.w,b.h,4);
+  ctx.fill();
+  ctx.shadowColor='transparent';
+  
+  if(b.type === 'tnt'){
+    ctx.fillStyle = '#ffffff'; 
+    const lw = b.w * 0.7; const lh = b.h * 0.5;
+    ctx.fillRect(b.x + (b.w - lw)/2, b.y + (b.h - lh)/2, lw, lh);
+    ctx.strokeStyle = '#cccccc'; ctx.lineWidth = 2;
+    ctx.strokeRect(b.x + (b.w - lw)/2, b.y + (b.h - lh)/2, lw, lh);
+    ctx.fillStyle = '#d32f2f';
+    ctx.font = `900 ${b.w*0.35}px 'Fredoka One'`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('TNT', b.x + b.w/2, b.y + b.h/2 + 2);
+  }
+
+  if(hpRatio<1){
+    ctx.globalAlpha=1-hpRatio;
+    ctx.fillStyle=m.crackColor;
+    drawRoundRect(ctx,b.x,b.y,b.w,b.h,4);
+    ctx.fill();
+    ctx.globalAlpha=1;
+    ctx.strokeStyle=m.crackColor;ctx.lineWidth=1.5;
+    for(const c of b.cracks){
+      ctx.beginPath();ctx.moveTo(c.x1,c.y1);ctx.lineTo(c.x2,c.y2);ctx.stroke();
+    }
+  }
+  ctx.strokeStyle=m.stroke;ctx.lineWidth=2;
+  drawRoundRect(ctx,b.x,b.y,b.w,b.h,4);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPig(p){
+  if(p.destroyed)return;
+  const hpR=p.hp/p.maxHp;
+  ctx.save();
+  if(p.hit){ctx.shadowColor='#ff0';ctx.shadowBlur=14;}
+  
+  ctx.fillStyle=p.hp===p.maxHp?'#5cb85c':'#8bc34a';
+  ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.1, p.r),0,Math.PI*2);ctx.fill();
+  
+  if(hpR<1){
+    ctx.fillStyle=`rgba(100,0,0,${.5*(1-hpR)})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.1, p.r),0,Math.PI*2);ctx.fill();
+  }
+  
+  const shine = ctx.createRadialGradient(p.x - p.r*.3, p.y - p.r*.3, 0, p.x - p.r*.3, p.y - p.r*.3, p.r*.8);
+  shine.addColorStop(0, 'rgba(255,255,255,0.5)');
+  shine.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shine;
+  ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.1, p.r), 0, Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle='#2e7d32';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.1, p.r),0,Math.PI*2);ctx.stroke();
+  
+  ctx.fillStyle='#aed581'; 
+  ctx.beginPath();ctx.ellipse(p.x,p.y+p.r*.25,Math.max(0.1, p.r*.45),Math.max(0.1, p.r*.35),0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#558b2f'; ctx.lineWidth=1.5; ctx.stroke();
+  
+  ctx.fillStyle='#33691e';ctx.beginPath();
+  ctx.ellipse(p.x-p.r*.18,p.y+p.r*.22,Math.max(0.1, p.r*.12),Math.max(0.1, p.r*.15),0,0,Math.PI*2);
+  ctx.ellipse(p.x+p.r*.18,p.y+p.r*.22,Math.max(0.1, p.r*.12),Math.max(0.1, p.r*.15),0,0,Math.PI*2);ctx.fill();
+  
+  ctx.fillStyle='white';
+  ctx.beginPath();ctx.arc(p.x-p.r*.38,p.y-p.r*.15,Math.max(0.1, p.r*.22),0,Math.PI*2);
+  ctx.arc(p.x+p.r*.38,p.y-p.r*.15,Math.max(0.1, p.r*.22),0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#558b2f'; ctx.stroke();
+  
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.arc(p.x-p.r*.32,p.y-p.r*.15,Math.max(0.1, p.r*.08),0,Math.PI*2);
+  ctx.arc(p.x+p.r*.32,p.y-p.r*.15,Math.max(0.1, p.r*.08),0,Math.PI*2);ctx.fill();
+  
+  if (p.maxHp >= 3 && p.maxHp < 6) {
+    ctx.fillStyle = '#95a5a6';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y + p.r*.1, Math.max(0.1, p.r*1.02), Math.PI, 0);
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#2c3e50'; ctx.stroke();
+    ctx.fillStyle = '#bdc3c7';
+    ctx.fillRect(p.x - p.r*1.1, p.y + p.r*.05, p.r*2.2, p.r*.25);
+    ctx.strokeRect(p.x - p.r*1.1, p.y + p.r*.05, p.r*2.2, p.r*.25);
+  }
+
+  if(p.maxHp>=6){
+    ctx.fillStyle='#ffc107';
+    ctx.beginPath();
+    ctx.moveTo(p.x-p.r*.6, p.y-p.r*.6);
+    ctx.lineTo(p.x-p.r*.4, p.y-p.r*1.4);
+    ctx.lineTo(p.x, p.y-p.r*.9);
+    ctx.lineTo(p.x+p.r*.4, p.y-p.r*1.4);
+    ctx.lineTo(p.x+p.r*.6, p.y-p.r*.6);
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#b8860b'; ctx.stroke();
+    ctx.fillStyle = '#e74c3c';
+    ctx.beginPath(); ctx.arc(p.x, p.y-p.r*.8, Math.max(0.1, p.r*.15), 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#3498db';
+    ctx.beginPath(); ctx.arc(p.x-p.r*.35, p.y-p.r*.9, Math.max(0.1, p.r*.12), 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x+p.r*.35, p.y-p.r*.9, Math.max(0.1, p.r*.12), 0, Math.PI*2); ctx.fill();
+  }
+  
+  if(p.maxHp>1){
+    const bw=p.r*2.2,bh=5,bx=p.x-p.r*1.1,by=p.y-p.r- (p.maxHp>=3? 25 : 15);
+    ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=hpR>.6?'#4caf50':hpR>.3?'#ff9800':'#f44336';
+    ctx.fillRect(bx,by,bw*hpR,bh);
+  }
+  ctx.restore();
+}
+
+function drawAngryBird(x, y, r, type){
+  ctx.save();
+  ctx.translate(x, y);
+  switch(type){
+    case 'normal': drawRedBird(r); break;
+    case 'yellow': drawYellowBird(r); break;
+    case 'blue':   drawBlueBird(r); break;
+    case 'bomb':   drawBombBird(r); break;
+    case 'white':  drawWhiteBird(r); break;
+    case 'green':  drawGreenBird(r); break;
+    case 'big':    drawBigRedBird(r); break;
+    case 'egg_projectile': drawEgg(r); break;
+    default:       drawRedBird(r);
+  }
+  ctx.restore();
+}
+
+function drawRedBird(r){
+  ctx.fillStyle='#1a1a1a';
+  ctx.beginPath();ctx.moveTo(-r*.1, r*.5);ctx.lineTo(-r*.8, r*1.0);ctx.lineTo(-r*.2, r*.7);ctx.closePath(); ctx.fill();
+  ctx.beginPath();ctx.moveTo(r*.1, r*.5);ctx.lineTo(r*.5, r*1.1);ctx.lineTo(r*.2, r*.65);ctx.closePath(); ctx.fill();
+
+  const bodyGrad = ctx.createRadialGradient(-r*.2,-r*.2,r*.1, 0,0,r);
+  bodyGrad.addColorStop(0,'#ff6b4a');bodyGrad.addColorStop(0.5,'#e02020');bodyGrad.addColorStop(1,'#8b0000');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath(); ctx.arc(0, 0, Math.max(0.1, r), 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#6b0000'; ctx.lineWidth=r*.08;
+  ctx.beginPath(); ctx.arc(0, 0, Math.max(0.1, r), 0, Math.PI*2); ctx.stroke();
+
+  ctx.fillStyle='#f5e6c8';
+  ctx.beginPath();ctx.ellipse(r*.08, r*.3, Math.max(0.1, r*.48), Math.max(0.1, r*.35), -0.2, 0, Math.PI*2);ctx.fill();
+
+  ctx.fillStyle='#cc1a00';ctx.strokeStyle='#6b0000'; ctx.lineWidth=r*.06;
+  ctx.beginPath();ctx.moveTo(-r*.25, -r*.72);ctx.quadraticCurveTo(-r*.6, -r*1.4, -r*.35, -r*1.55);ctx.quadraticCurveTo(-r*.1, -r*1.35, -r*.05, -r*.78);ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-r*.05, -r*.82);ctx.quadraticCurveTo(-r*.05, -r*1.7, r*.05, -r*1.75);ctx.quadraticCurveTo(r*.18, -r*1.6, r*.12, -r*.85);ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle='#f5c000';
+  ctx.beginPath();ctx.moveTo(r*.45, -r*.08);ctx.lineTo(r*1.12, -r*.05);ctx.lineTo(r*.5, r*.22);ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#b8860b'; ctx.lineWidth=r*.06;
+  ctx.beginPath();ctx.moveTo(r*.45, -r*.08);ctx.lineTo(r*1.12, -r*.05);ctx.lineTo(r*.5, r*.22);ctx.closePath(); ctx.stroke();
+  ctx.fillStyle='#e5aa00';
+  ctx.beginPath();ctx.moveTo(r*.48, r*.18);ctx.lineTo(r*1.08, r*.08);ctx.lineTo(r*.5, r*.38);ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle='white';
+  ctx.beginPath(); ctx.ellipse(-r*.18, -r*.28, Math.max(0.1, r*.3), Math.max(0.1, r*.32), -0.3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(r*.28, -r*.22, Math.max(0.1, r*.28), Math.max(0.1, r*.30), 0.2, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#111';
+  ctx.beginPath(); ctx.arc(-r*.12, -r*.22, Math.max(0.1, r*.14), 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*.3, -r*.16, Math.max(0.1, r*.13), 0, Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=r*.14; ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-r*.52, -r*.56);ctx.lineTo(-r*.04, -r*.48);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(r*.08, -r*.48);ctx.lineTo(r*.56, -r*.5);ctx.stroke();
+  
+  const shineGrad = ctx.createRadialGradient(-r*.3,-r*.35,0,-r*.3,-r*.35,r*.45);
+  shineGrad.addColorStop(0,'rgba(255,255,255,0.38)');shineGrad.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=shineGrad;ctx.beginPath(); ctx.arc(0,0,Math.max(0.1, r),0,Math.PI*2); ctx.fill();
+}
+
+function drawYellowBird(r){
+  ctx.fillStyle='#fdd835';
+  ctx.beginPath(); ctx.moveTo(0, -r*1.4); ctx.lineTo(r*1.2, r*.8); ctx.lineTo(-r*1.2, r*.8); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#f57f17'; ctx.lineWidth=r*.08; ctx.stroke();
+  
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.moveTo(0, r*.1); ctx.lineTo(r*.8, r*.7); ctx.lineTo(-r*.8, r*.7); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle='#111';
+  ctx.beginPath(); ctx.moveTo(0, -r*1.4); ctx.lineTo(r*.3, -r*1.9); ctx.lineTo(-r*.1, -r*1.7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-r*.1, -r*1.4); ctx.lineTo(-r*.3, -r*1.8); ctx.lineTo(-r*.2, -r*1.5); ctx.fill();
+
+  ctx.fillStyle='white'; 
+  ctx.beginPath(); ctx.arc(-r*.2, -r*.1, Math.max(0.1, r*.22), 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*.2, -r*.1, Math.max(0.1, r*.22), 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#111'; 
+  ctx.beginPath(); ctx.arc(-r*.15, -r*.1, Math.max(0.1, r*.1), 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*.25, -r*.1, Math.max(0.1, r*.1), 0, Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle='#d32f2f'; ctx.lineWidth=r*.15; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-r*.5, -r*.4); ctx.lineTo(-r*.05, -r*.25); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(r*.5, -r*.4); ctx.lineTo(r*.05, -r*.25); ctx.stroke();
+
+  ctx.fillStyle='#ff9800';
+  ctx.beginPath(); ctx.moveTo(-r*.15, r*.05); ctx.lineTo(r*1.2, r*.25); ctx.lineTo(-r*.15, r*.45); ctx.fill();
+  ctx.strokeStyle='#e65100'; ctx.lineWidth=r*.05;
+  ctx.beginPath(); ctx.moveTo(-r*.15, r*.05); ctx.lineTo(r*1.2, r*.25); ctx.lineTo(-r*.15, r*.45); ctx.stroke();
+}
+
+function drawBombBird(r){
+  ctx.fillStyle='#222';
+  ctx.beginPath();ctx.moveTo(-r*.1,r*.55);ctx.lineTo(-r*.65,r*.95);ctx.lineTo(-r*.2,r*.7);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(r*.1,r*.55);ctx.lineTo(r*.4,r*1.0);ctx.lineTo(r*.2,r*.7);ctx.closePath();ctx.fill();
+
+  const bg=ctx.createRadialGradient(-r*.2,-r*.2,r*.05,0,0,r);
+  bg.addColorStop(0,'#555');bg.addColorStop(0.6,'#1a1a1a');bg.addColorStop(1,'#000');
+  ctx.fillStyle=bg;
+  ctx.beginPath();ctx.arc(0,0,Math.max(0.1, r),0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#000';ctx.lineWidth=r*.07;
+  ctx.beginPath();ctx.arc(0,0,Math.max(0.1, r),0,Math.PI*2);ctx.stroke();
+
+  ctx.strokeStyle='#8B6914';ctx.lineWidth=r*.1;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(r*.1,-r*.9);ctx.quadraticCurveTo(r*.5,-r*1.3,r*.3,-r*1.55);ctx.stroke();
+  ctx.fillStyle='#ffcc00';ctx.shadowColor='#ff6600';ctx.shadowBlur=10;
+  ctx.beginPath();ctx.arc(r*.28,-r*1.57,Math.max(0.1, r*.1),0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=0;
+
+  ctx.fillStyle='rgba(255,255,255,0.18)';
+  ctx.beginPath();ctx.ellipse(r*.1,r*.28,Math.max(0.1, r*.38),Math.max(0.1, r*.28),-0.2,0,Math.PI*2);ctx.fill();
+
+  ctx.fillStyle='white';
+  ctx.beginPath();ctx.ellipse(-r*.2,-r*.25,Math.max(0.1, r*.28),Math.max(0.1, r*.3),-0.25,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(r*.25,-r*.2,Math.max(0.1, r*.26),Math.max(0.1, r*.28),0.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.arc(-r*.14,-r*.2,Math.max(0.1, r*.13),0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(r*.28,-r*.15,Math.max(0.1, r*.12),0,Math.PI*2);ctx.fill();
+
+  ctx.strokeStyle='#111';ctx.lineWidth=r*.13;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-r*.5,-r*.52);ctx.lineTo(-r*.06,-r*.46);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(r*.06,-r*.46);ctx.lineTo(r*.52,-r*.48);ctx.stroke();
+
+  ctx.fillStyle='#f5c000';
+  ctx.beginPath();ctx.moveTo(r*.4,-r*.05);ctx.lineTo(r*1.05,r*.0);ctx.lineTo(r*.45,r*.32);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#b8860b';ctx.lineWidth=r*.06;
+  ctx.beginPath();ctx.moveTo(r*.4,-r*.05);ctx.lineTo(r*1.05,r*.0);ctx.lineTo(r*.45,r*.32);ctx.closePath();ctx.stroke();
+}
+
+function drawBlueBird(r){
+  const bg=ctx.createRadialGradient(-r*.2,-r*.2,r*.05,0,0,r);
+  bg.addColorStop(0,'#64b5f6');bg.addColorStop(0.6,'#1565c0');bg.addColorStop(1,'#0d47a1');
+  ctx.fillStyle=bg;
+  ctx.beginPath();ctx.arc(0,0,Math.max(0.1, r),0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#0a3472';ctx.lineWidth=r*.08;
+  ctx.beginPath();ctx.arc(0,0,Math.max(0.1, r),0,Math.PI*2);ctx.stroke();
+
+  ctx.fillStyle='#1a237e';
+  ctx.beginPath();ctx.moveTo(-r*.1,-r*.78);ctx.quadraticCurveTo(-r*.3,-r*1.4,r*.0,-r*1.5);ctx.quadraticCurveTo(r*.25,-r*1.3,r*.08,-r*.8);ctx.closePath();ctx.fill();
+
+  ctx.fillStyle='rgba(255,255,255,0.6)';
+  ctx.beginPath();ctx.ellipse(r*.05,r*.28,Math.max(0.1, r*.38),Math.max(0.1, r*.28),-0.15,0,Math.PI*2);ctx.fill();
+
+  ctx.fillStyle='white';
+  ctx.beginPath();ctx.ellipse(-r*.18,-r*.25,Math.max(0.1, r*.26),Math.max(0.1, r*.28),-0.25,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(r*.22,-r*.2,Math.max(0.1, r*.24),Math.max(0.1, r*.26),0.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.arc(-r*.12,-r*.2,Math.max(0.1, r*.12),0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(r*.25,-r*.15,Math.max(0.1, r*.11),0,Math.PI*2);ctx.fill();
+
+  ctx.strokeStyle='#0a1a5e';ctx.lineWidth=r*.12;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-r*.46,-r*.5);ctx.lineTo(-r*.05,-r*.44);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(r*.04,-r*.44);ctx.lineTo(r*.48,-r*.46);ctx.stroke();
+
+  ctx.fillStyle='#f5c000';
+  ctx.beginPath();ctx.moveTo(r*.38,-r*.05);ctx.lineTo(r*1.0,r*.0);ctx.lineTo(r*.42,r*.28);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#b8860b';ctx.lineWidth=r*.06;
+  ctx.beginPath();ctx.moveTo(r*.38,-r*.05);ctx.lineTo(r*1.0,r*.0);ctx.lineTo(r*.42,r*.28);ctx.closePath();ctx.stroke();
+}
+
+function drawBigRedBird(r){ ctx.scale(1.2,1.2); drawRedBird(r); }
+
+function drawWhiteBird(r){
+  ctx.fillStyle='#ccc';
+  ctx.beginPath();ctx.moveTo(-r*.1,r*.55);ctx.lineTo(-r*.7,r*.9);ctx.lineTo(-r*.2,r*.65);ctx.closePath();ctx.fill();
+
+  const bg=ctx.createRadialGradient(-r*.2,-r*.25,r*.05,0,0,r);
+  bg.addColorStop(0,'#ffffff');bg.addColorStop(0.6,'#e0e0e0');bg.addColorStop(1,'#9e9e9e');
+  ctx.fillStyle=bg;
+  ctx.beginPath();ctx.ellipse(0,0,Math.max(0.1, r),Math.max(0.1, r*1.1),0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#9e9e9e';ctx.lineWidth=r*.07;
+  ctx.beginPath();ctx.ellipse(0,0,Math.max(0.1, r),Math.max(0.1, r*1.1),0,0,Math.PI*2);ctx.stroke();
+
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.moveTo(-r*.1,-r*.82);ctx.quadraticCurveTo(-r*.25,-r*1.45,-r*.05,-r*1.5);ctx.quadraticCurveTo(r*.2,-r*1.35,r*.1,-r*.85);ctx.closePath();ctx.fill();
+
+  ctx.fillStyle='rgba(255,100,150,0.5)';
+  ctx.beginPath();ctx.arc(-r*.35,r*.1,Math.max(0.1, r*.15),0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(r*.35,r*.1,Math.max(0.1, r*.15),0,Math.PI*2);ctx.fill();
+
+  ctx.fillStyle='white';
+  ctx.beginPath();ctx.ellipse(-r*.2,-r*.26,Math.max(0.1, r*.28),Math.max(0.1, r*.3),-0.25,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(r*.24,-r*.21,Math.max(0.1, r*.26),Math.max(0.1, r*.28),0.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.arc(-r*.14,-r*.21,Math.max(0.1, r*.12),0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(r*.27,-r*.16,Math.max(0.1, r*.11),0,Math.PI*2);ctx.fill();
+
+  ctx.strokeStyle='#111';ctx.lineWidth=r*.12;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-r*.48,-r*.52);ctx.lineTo(-r*.05,-r*.46);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(r*.04,-r*.46);ctx.lineTo(r*.5,-r*.48);ctx.stroke();
+
+  ctx.fillStyle='#f5c000';
+  ctx.beginPath();ctx.moveTo(r*.42,-r*.1);ctx.lineTo(r*1.1,r*.1);ctx.lineTo(r*.42,r*.25);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#b8860b';ctx.lineWidth=r*.06;
+  ctx.beginPath();ctx.moveTo(r*.42,-r*.1);ctx.lineTo(r*1.1,r*.1);ctx.lineTo(r*.42,r*.25);ctx.closePath();ctx.stroke();
+}
+
+function drawEgg(r){
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.ellipse(0, 0, Math.max(0.1, r*0.8), Math.max(0.1, r*1.1), 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#cccccc'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(0, 0, Math.max(0.1, r*0.8), Math.max(0.1, r*1.1), 0, 0, Math.PI*2); ctx.stroke();
+}
+
+function drawGreenBird(r){
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.moveTo(-r*.1, r*.3);ctx.lineTo(-r*1.1, r*.5);ctx.lineTo(-r*.3, r*.6);ctx.fill();
+  ctx.beginPath();ctx.moveTo(-r*.2, r*.1);ctx.lineTo(-r*.9, -r*.1);ctx.lineTo(-r*.2, r*.3);ctx.fill();
+
+  const bg=ctx.createRadialGradient(-r*.2,-r*.2,r*.05,0,0,r);
+  bg.addColorStop(0,'#81c784');bg.addColorStop(0.6,'#4caf50');bg.addColorStop(1,'#1b5e20');
+  ctx.fillStyle=bg;
+  ctx.beginPath();ctx.arc(0,0,Math.max(0.1, r),0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#1b5e20';ctx.lineWidth=r*.08;
+  ctx.beginPath();ctx.arc(0,0,Math.max(0.1, r),0,Math.PI*2);ctx.stroke();
+
+  ctx.fillStyle='#ff9800';
+  ctx.beginPath();
+  ctx.moveTo(r*.1, -r*.2);
+  ctx.quadraticCurveTo(r*2.2, -r*.3, r*1.8, r*.4); 
+  ctx.quadraticCurveTo(r*.8, r*.5, r*.1, r*.4);
+  ctx.fill();
+  
+  ctx.strokeStyle='#e65100';ctx.lineWidth=r*.06;
+  ctx.beginPath();
+  ctx.moveTo(r*.1, -r*.2);
+  ctx.quadraticCurveTo(r*2.2, -r*.3, r*1.8, r*.4);
+  ctx.quadraticCurveTo(r*.8, r*.5, r*.1, r*.4);
+  ctx.stroke();
+  
+  ctx.strokeStyle='#c13e00';ctx.lineWidth=r*.04;
+  ctx.beginPath();ctx.moveTo(r*.1, r*.1);ctx.quadraticCurveTo(r*1.5, r*.0, r*1.7, r*.35);ctx.stroke();
+
+  ctx.fillStyle='white';
+  ctx.beginPath();ctx.arc(-r*.1, -r*.35, Math.max(0.1, r*.25), 0, Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(r*.3, -r*.4, Math.max(0.1, r*.25), 0, Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';
+  ctx.beginPath();ctx.arc(-r*.02, -r*.32, Math.max(0.1, r*.12), 0, Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(r*.38, -r*.38, Math.max(0.1, r*.12), 0, Math.PI*2);ctx.fill();
+}
+
+function drawBird(b){
+  if(!b||!b.alive)return;
+  ctx.save();
+  if(b.launched){
+    for(let i=0;i<trails.length;i++){
+      const t=trails[i],a=i/trails.length;
+      ctx.globalAlpha=a*.45;
+      ctx.fillStyle=b.color;
+      // Fixed: Safely clamp radius to a minimum to avoid Canvas DOMException crashes
+      const rad = Math.max(0.1, b.r*(a*.55));
+      ctx.beginPath();ctx.arc(t.x,t.y,rad,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  ctx.shadowColor=b.color;ctx.shadowBlur=16;
+  ctx.fillStyle=b.color;
+  ctx.beginPath();ctx.arc(b.x,b.y,Math.max(0.1, b.r),0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  drawAngryBird(b.x, b.y, b.r, b.type);
+}
+
+function drawSlingshot(){
+  ctx.save();
+  ctx.strokeStyle='#5d4037';ctx.lineWidth=8;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(SLING.x-2,SLING.y+60);ctx.lineTo(SLING.x-14,SLING.y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(SLING.x+2,SLING.y+60);ctx.lineTo(SLING.x+14,SLING.y);ctx.stroke();
+  ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(SLING.x,SLING.y+60);ctx.lineTo(SLING.x,SLING.y+90);ctx.stroke();
+
+  if(isDragging&&currentBird){
+    const lx=SLING.x-14,rx=SLING.x+14;
+    const grad=ctx.createLinearGradient(lx,SLING.y,dragX,dragY);
+    grad.addColorStop(0,'#795548');grad.addColorStop(1,'#a1887f');
+    ctx.strokeStyle=grad;ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(lx,SLING.y);ctx.lineTo(dragX,dragY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(rx,SLING.y);ctx.lineTo(dragX,dragY);ctx.stroke();
+  }else if(currentBird&&!currentBird.launched){
+    ctx.strokeStyle='#795548';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(SLING.x-14,SLING.y);ctx.lineTo(SLING.x,SLING.y);ctx.lineTo(SLING.x+14,SLING.y);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawTrajectory(){
+  if(!isDragging||!currentBird)return;
+  const dx=SLING.x-dragX,dy=SLING.y-dragY;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const pwr=Math.min(MAX_DRAG,dist);
+  const ang=Math.atan2(dy,dx);
+  let vx=Math.cos(ang)*pwr*.28,vy=Math.sin(ang)*pwr*.28;
+  let tx=dragX,ty=dragY;
+  ctx.save();
+  ctx.setLineDash([6,8]);
+  for(let i=0;i<22;i++){
+    const a=1-i/22;
+    ctx.fillStyle=`rgba(255,255,255,${a*.6})`;
+    ctx.beginPath();ctx.arc(tx,ty,3,0,Math.PI*2);ctx.fill();
+    tx+=vx;ty+=vy;vy+=GRAVITY*.8;
+    if(ty>GND)break;
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawBackground(){
+  const lv = LEVELS[currentLevel];
+  if(!lv) return;
+  const bg = lv.bg;
+  const grad=ctx.createLinearGradient(0,0,0,GND);
+  grad.addColorStop(0,bg.sky1);grad.addColorStop(1,bg.sky2);
+  ctx.fillStyle=grad;ctx.fillRect(-50,-50,W+100,H+100); 
+  
+  for(const s of stars){
+    ctx.fillStyle=`rgba(255,255,255,${.5+Math.sin(Date.now()*.001+s.x)*.5})`;
+    ctx.beginPath();ctx.arc(s.x,s.y,Math.max(0.1, s.r),0,Math.PI*2);ctx.fill();
+  }
+  
+  ctx.fillStyle='rgba(255,255,255,0.82)';
+  for(const c of clouds){
+    ctx.beginPath();
+    ctx.arc(c.x,c.y,Math.max(0.1, c.r),0,Math.PI*2);
+    ctx.arc(c.x+c.r*.7,c.y-c.r*.25,Math.max(0.1, c.r*.75),0,Math.PI*2);
+    ctx.arc(c.x+c.r*1.4,c.y,Math.max(0.1, c.r*.85),0,Math.PI*2);
+    ctx.fill();
+  }
+  const ggrad=ctx.createLinearGradient(0,GND,0,H);
+  ggrad.addColorStop(0,bg.gnd||'#4caf50');
+  ggrad.addColorStop(1,'#1b5e20');
+  ctx.fillStyle=ggrad;ctx.fillRect(-50,GND,W+100,H-GND+50);
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(-50,GND,W+100,3);
+  ctx.fillStyle='rgba(0,0,0,0.1)';
+  ctx.beginPath();ctx.moveTo(0,GND);
+  for(let x=-50;x<=W+50;x+=40){ctx.lineTo(x,GND-20*Math.sin(x*.02+1.5)-10);}
+  ctx.lineTo(W+50,GND);ctx.closePath();ctx.fill();
+
+  if(snowflakes.length > 0){
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    for(const sn of snowflakes) {
+        ctx.beginPath(); ctx.arc(sn.x, sn.y, Math.max(0.1, sn.r), 0, Math.PI*2); ctx.fill();
+    }
+  }
+}
+
+function drawParticles(){
+  for(const p of particles){
+    if(p.isText) continue;
+    ctx.save();
+    ctx.globalAlpha=Math.max(0, p.life);
+    ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.1, p.r),0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+}
+
+function circRect(cx,cy,cr,rx,ry,rw,rh){
+  const nearX=Math.max(rx,Math.min(cx,rx+rw));
+  const nearY=Math.max(ry,Math.min(cy,ry+rh));
+  return (cx-nearX)**2+(cy-nearY)**2 < cr*cr;
+}
+function addCrack(b,bx,by){
+  const cx=Math.random()*b.w+b.x,cy=Math.random()*b.h+b.y;
+  b.cracks.push({x1:cx,y1:cy,x2:cx+(-15+Math.random()*30),y2:cy+(-15+Math.random()*30)});
+}
+
+function applyDamage(target,dmg,bx,by,isBlock){
+  if(isBlock){
+    target.hp-=dmg;
+    addCrack(target,bx,by);
+    if(target.hp<=0 && !target.destroyed){
+      target.destroyed=true;
+      boom(bx,by,target.mat.fill,14,4);
+      smokeAt(bx,by);
+      addScore(target.mat.pts);
+      sfxHit();
+      if(target.type === 'tnt' && !target.detonated){
+        target.detonated = true;
+        sfxExplode();
+        setTimeout(() => triggerBomb(target.x + target.w/2, target.y + target.h/2, true), 80);
+      }
+    }
+  }else{
+    target.hp-=dmg;
+    target.hit=true;target.hitTimer=8;
+    if(target.hp<=0 && !target.destroyed){
+      target.destroyed=true;
+      boom(bx,by,'#8bc34a',24,6);
+      boom(bx,by,'#ffeb3b',10,3);
+      smokeAt(bx,by);
+      addScore(150+target.maxHp*30);
+      sfxPigDie();
+      registerKill();
+    }
+  }
+}
+
+function addScore(pts){
+  levelScore+=pts;
+  totalScore=Math.max(totalScore,0);
+  updateHUD();
+  particles.push({x:currentBird?currentBird.x:W/2,y:currentBird?currentBird.y:H/2,
+    vx:(Math.random()-.5)*1.5,vy:-2.5,
+    r:0,life:1,decay:.018,color:'#ffd000',text:'+'+pts,isText:true});
+}
+
+function triggerBomb(x, y, isTnt = false){
+  const rad = isTnt ? 170 : 130;
+  boom(x,y, isTnt ? '#ff5252' : '#ff9800', 45, 11);
+  boom(x,y,'#ff5722', 25, 15);
+  boom(x,y,'#ffeb3b', 20, 6);
+  smokeAt(x,y); smokeAt(x+20,y+20); smokeAt(x-20,y-20);
+  
+  shakeFrames = 18;
+  shakeMag = isTnt ? 14 : 10;
+  try { if(navigator.vibrate) navigator.vibrate(isTnt ? 200 : 100); } catch(e){}
+
+  for(const b of blocks){
+    if(!b.destroyed){
+      const cx=b.x+b.w/2,cy=b.y+b.h/2;
+      const d=Math.sqrt((cx-x)**2+(cy-y)**2);
+      if(d<rad)applyDamage(b,Math.ceil(6*(1-d/rad)),x,y,true);
+    }
+  }
+  for(const p of pigs){
+    if(!p.destroyed){
+      const d=Math.sqrt((p.x-x)**2+(p.y-y)**2);
+      if(d<rad)applyDamage(p,Math.ceil(5*(1-d/rad)),x,y,false);
+    }
+  }
+}
+
+function doSplit(b){
+  b.splitDone=true;
+  b.vx *= 1.1; 
+  for(let i=-1;i<=1;i+=2){
+    splitBirds.push({
+      x:b.x,y:b.y+i*10,vx:b.vx,vy:b.vy+i*3,
+      color:b.color,r:b.r,damage:b.damage,launched:true,alive:true,type:'blue',
+      special:null,activated:true
+    });
+  }
+}
+
+function dropEgg(b){
+  b.splitDone=true;
+  b.vy = -6; 
+  b.vx += 1;
+  splitBirds.push({
+    x:b.x, y:b.y+b.r+5, vx:b.vx*0.2, vy:4,
+    color:'#fff', r:14, damage:0, launched:true, alive:true, type:'egg_projectile',
+    special:'bomb_on_impact', activated:false
+  });
+}
+
+function triggerSpecialAbility(bird) {
+  sfxTap();
+  if(bird.special==='bomb'){bird.activated=true;triggerBomb(bird.x,bird.y);sfxExplode();bird.alive=false;nextBirdCheck();}
+  else if(bird.special==='split'&&!bird.splitDone){doSplit(bird);}
+  else if(bird.special==='egg'&&!bird.splitDone){dropEgg(bird);}
+  else if(bird.special==='dash'){
+    bird.vx*=2.6; bird.vy*=0.2;
+    bird.activated=true;
+    boom(bird.x, bird.y, '#fdd835', 15, 4);
+  }
+  else if(bird.special==='boomerang'){
+    bird.activated = true;
+    bird.vx = -bird.vx * 1.5; 
+    bird.vy = bird.vy > 0 ? -bird.vy : bird.vy - 3;
+    boom(bird.x, bird.y, '#4caf50', 10, 3);
+  }
+}
+
+function applyPhysics() {
+  const activeBlocks = blocks.filter(b => !b.destroyed);
+  const activePigs = pigs.filter(p => !p.destroyed);
+  
+  let items = [];
+  // Standardize hitboxes for blocks and pigs
+  activeBlocks.forEach(b => { 
+    if(b.vy===undefined) b.vy=0; 
+    items.push({ obj: b, isPig: false, x: b.x, w: b.w, get y(){return b.y;}, set y(v){b.y=v;}, get bottom(){return b.y+b.h;} });
+  });
+  activePigs.forEach(p => { 
+    if(p.vy===undefined) p.vy=0; 
+    items.push({ obj: p, isPig: true, x: p.x-p.r, w: p.r*2, get y(){return p.y-p.r;}, set y(v){p.y=v+p.r;}, get bottom(){return p.y+p.r;} });
+  });
+
+  // Sort from bottom to top so we resolve lower elements resting before higher ones
+  items.sort((a,b) => b.bottom - a.bottom);
+
+  for(let i=0; i<items.length; i++) {
+    let item = items[i];
+    if(item.obj.destroyed) continue; // Skip if destroyed during chain reaction
+
+    item.obj.vy += GRAVITY;
+    if(Math.abs(item.obj.vy) < 0.1) item.obj.vy = 0; 
+    
+    let prevBottom = item.bottom;
+    item.y += item.obj.vy;
+    
+    let grounded = false;
+
+    // 1. Floor collision check
+    if (item.bottom >= GND) {
+        item.y = GND - (item.bottom - item.y);
+        if (item.obj.vy > 3) {
+            let dmg = Math.floor((item.obj.vy - 3) * 0.8); // Falling crush damage
+            if(dmg > 0) applyDamage(item.obj, dmg, item.x + item.w/2, item.bottom, !item.isPig);
+        }
+        item.obj.vy = 0;
+        grounded = true;
+    }
+
+    // 2. Stacking object collision check
+    if (!grounded) {
+        // Check top-down to catch highest obstacle first
+        for(let j=items.length-1; j>=0; j--) {
+            if (i===j) continue;
+            let other = items[j];
+            if(other.obj.destroyed) continue;
+            
+            // Check X axis overlap
+            if (item.x + 2 < other.x + other.w && item.x + item.w - 2 > other.x) {
+                // Was it above the other object last frame, and now intersecting?
+                if (item.obj.vy >= 0 && prevBottom <= other.y + 5 && item.bottom >= other.y) {
+                    item.y = other.y - (item.bottom - item.y); 
+                    
+                    // Add crush damage if falling fast enough!
+                    if (item.obj.vy > 3) { 
+                        let dmg = Math.floor((item.obj.vy - 3) * 0.8);
+                        let hitX = item.x + item.w/2;
+                        let hitY = item.bottom;
+                        if(dmg > 0) {
+                            applyDamage(item.obj, dmg, hitX, hitY, !item.isPig);
+                            applyDamage(other.obj, dmg, hitX, hitY, !other.isPig);
+                        }
+                    }
+                    item.obj.vy = other.obj.vy || 0; // Move dynamically with object under it
+                    grounded = true;
+                    break; 
+                }
+            }
+        }
+    }
+  }
+}
+
+function updateBird(b){
+  if(!b||!b.launched||!b.alive)return;
+  b.vy+=GRAVITY;
+  b.x+=b.vx;b.y+=b.vy;
+
+  if(b===currentBird){
+    trails.push({x:b.x,y:b.y});
+    if(trails.length>TRAIL_LEN)trails.shift();
+  }
+
+  if(b.y+b.r>GND){
+    b.y=GND-b.r;
+    if(b.special === 'bomb_on_impact'){ triggerBomb(b.x, b.y, false); b.alive = false; nextBirdCheck(); return; }
+    b.vy*=-.35;b.vx*=.75;
+    if(Math.abs(b.vy)<1&&Math.abs(b.vx)<1){b.alive=false;nextBirdCheck();}
+  }
+  if(b.x>W+50||b.x<-200||b.y>H+50){b.alive=false;nextBirdCheck();}
+
+  for(const bl of blocks){
+    if(!bl.destroyed&&circRect(b.x,b.y,b.r,bl.x,bl.y,bl.w,bl.h)){
+      if(b.special === 'bomb_on_impact'){ triggerBomb(b.x, b.y, false); b.alive = false; nextBirdCheck(); break; }
+      applyDamage(bl,b.damage,b.x,b.y,true);
+      const cx=bl.x+bl.w/2,cy=bl.y+bl.h/2;
+      const dx=b.x-cx,dy=b.y-cy;
+      const absDx=Math.abs(dx)/bl.w,absDy=Math.abs(dy)/bl.h;
+      if(absDx>absDy){b.vx*=-.4;}else{b.vy*=-.4;}
+      b.vx*=.8;b.vy*=.8;
+      if(b.type==='bomb'&&!b.activated){b.activated=true;triggerBomb(b.x,b.y);b.alive=false;nextBirdCheck();}
+      if(b.type==='green' && b.activated) b.vx *= 0.5;
+    }
+  }
+  for(const pg of pigs){
+    if(!pg.destroyed){
+      const d=Math.sqrt((b.x-pg.x)**2+(b.y-pg.y)**2);
+      if(d<b.r+pg.r){
+        if(b.special === 'bomb_on_impact'){ triggerBomb(b.x, b.y, false); b.alive = false; nextBirdCheck(); break; }
+        applyDamage(pg,b.damage,b.x,b.y,false);
+        if(b.type==='bomb'&&!b.activated){b.activated=true;triggerBomb(b.x,b.y);b.alive=false;nextBirdCheck();}
+        const ang=Math.atan2(b.y-pg.y,b.x-pg.x);
+        b.vx=Math.cos(ang)*Math.abs(b.vx)*.5;b.vy=Math.sin(ang)*Math.abs(b.vy)*.5;
+      }
+    }
+  }
+}
+
+function showTapHint(bird) {
+  const hint = document.getElementById('tap-hint');
+  if(!hint || !bird || !bird.special) { hideTapHint(); return; }
+  hint.classList.add('show');
+}
+function hideTapHint() {
+  const hint = document.getElementById('tap-hint');
+  if(hint) hint.classList.remove('show');
+}
+function updateTapHintPosition() {
+  if(!currentBird || !currentBird.launched) return;
+  const hint = document.getElementById('tap-hint');
+  if(!hint || !hint.classList.contains('show')) return;
+  const sx = currentBird.x * uniformScale;
+  const sy = (currentBird.y - currentBird.r - 28) * uniformScale;
+  const rect = document.getElementById('app').getBoundingClientRect();
+  hint.style.left = (rect.left + sx - hint.offsetWidth/2) + 'px';
+  hint.style.top  = (rect.top  + sy) + 'px';
+}
+
+function registerKill() {
+  comboCount++;
+  comboTimer = COMBO_WINDOW;
+  const el = document.getElementById('combo-display');
+  if(!el) return;
+  if(comboCount >= 2) {
+    el.textContent = `${comboCount}x COMBO! +${comboCount * 100}`;
+    el.classList.add('show');
+    levelScore += comboCount * 100;
+    updateHUD();
+  }
+}
+function tickCombo() {
+  if(comboTimer > 0) {
+    comboTimer--;
+    if(comboTimer === 0) {
+      comboCount = 0;
+      const el = document.getElementById('combo-display');
+      if(el) el.classList.remove('show');
+    }
+  }
+}
+
+let lastCheck=0;
+function gameLoop(){
+  animFrame=requestAnimationFrame(gameLoop);
+  if(paused) return;
+  try {
+    const now=Date.now();
+
+    for(const c of clouds){c.x+=c.speed;if(c.x>W+80)c.x=-80;}
+    for(const p of particles){
+      p.x+=p.vx;p.y+=p.vy;
+      if(!p.smoke)p.vy+=p.gravity||0;
+      p.life-=p.decay;
+    }
+    particles=particles.filter(p=>p.life>0);
+
+    if(snowflakes.length > 0){
+      for(const sn of snowflakes) {
+          sn.y += sn.speed;
+          sn.x += Math.sin(now*0.001 + sn.y)*0.5;
+          if(sn.y > H) { sn.y = -10; sn.x = Math.random()*W; }
+      }
+    }
+
+    for(const pg of pigs){if(pg.hitTimer>0){pg.hitTimer--;if(pg.hitTimer<=0)pg.hit=false;}}
+
+  if(state==='play'){
+    updateBird(currentBird);
+    for(const sb of splitBirds)updateBird(sb);
+    splitBirds=splitBirds.filter(b=>b.alive);
+    
+    applyPhysics(); // Update blocks falling
+    tickCombo();
+    updateTapHintPosition();
+    // Hide tap hint when bird is done or used ability
+    if(currentBird && currentBird.launched && (currentBird.activated || currentBird.splitDone)) hideTapHint();
+    if(!currentBird || !currentBird.launched) hideTapHint();
+    
+    if(now-lastCheck>500){lastCheck=now;checkLevelState();}
+  }
+
+  ctx.save();
+  if(shakeFrames > 0){
+      ctx.translate(W/2, H/2); ctx.scale(1.02, 1.02); ctx.translate(-W/2, -H/2);
+      ctx.translate((Math.random()-.5)*shakeMag, (Math.random()-.5)*shakeMag);
+      shakeFrames--; shakeMag *= 0.88; 
+    }
+
+    drawBackground();
+    for(const b of blocks)drawBlock(b);
+    for(const p of pigs)drawPig(p);
+    drawSlingshot();
+    drawTrajectory();
+    drawBird(currentBird);
+    for(const sb of splitBirds)drawBird(sb);
+    drawParticles();
+
+    for(const p of particles){
+      if(p.isText){
+        ctx.save();ctx.globalAlpha=Math.max(0, p.life);
+        ctx.fillStyle=p.color;ctx.font=`bold 20px 'Fredoka One',sans-serif`;
+        ctx.textAlign='center';
+        ctx.strokeStyle='#000'; ctx.lineWidth=3;
+        ctx.strokeText(p.text,p.x,p.y); ctx.fillText(p.text,p.x,p.y);
+        ctx.restore();
+      }
+    }
+    ctx.restore(); 
+  } catch (err) {
+      console.error("Game Loop Render Error prevented crash:", err);
+  }
+}
+
+function nextBirdCheck(){
+  if(state!=='play')return;
+  setTimeout(()=>{ if(state==='play') checkLevelState(); },600);
+}
+
+function checkLevelState(){
+  const pigsLeft=pigs.filter(p=>!p.destroyed).length;
+  const birdOut=(!currentBird||!currentBird.alive)&&splitBirds.length===0;
+  if(pigsLeft===0){showLevelWin();return;}
+  if(birdOut){
+    birdUsedCount++;
+    renderBirdQueue();
+    if(birdUsedCount>=birdsQueue.length){showGameOver();return;}
+    currentBird=spawnBird();trails=[];
+    isDragging=false;dragX=SLING.x;dragY=SLING.y;
+  }
+}
+
+function showLevelWin(){
+  state='win';
+  const bonusPerBird=300;
+  const remainBirds=birdsQueue.length-birdUsedCount-1;
+  const bonus=Math.max(0,remainBirds)*bonusPerBird;
+  levelScore+=bonus;
+  totalScore+=levelScore;
+  
+  if(totalScore>bestScore) bestScore=totalScore;
+  updateHUD();
+
+  let starsCount = 1;
+  if (remainBirds >= 2) starsCount = 3;
+  else if (remainBirds === 1) starsCount = 2;
+
+  if(starsCount > (levelStarsData[currentLevel] || 0)){
+    levelStarsData[currentLevel] = starsCount;
+  }
+  if(currentLevel >= maxUnlocked && currentLevel < LEVELS.length - 1){
+    maxUnlocked = currentLevel + 1;
+  }
+  saveProgress();
+
+  let starsStr = '';
+  const starEl = document.getElementById('win-stars');
+  if(starEl) {
+    starEl.innerHTML = '';
+    for(let s = 0; s < 3; s++) {
+      const span = document.createElement('span');
+      span.className = 'star-anim';
+      span.textContent = s < starsCount ? '⭐' : '☆';
+      span.style.opacity = s < starsCount ? '1' : '0.3';
+      starEl.appendChild(span);
+      if(s < starsCount) {
+        setTimeout(() => span.classList.add('pop'), 200 + s * 180);
+      }
+    }
+  }
+  const wsc = document.getElementById('win-score');
+  if(wsc) wsc.textContent=levelScore;
+  const wt = document.getElementById('win-total');
+  if(wt) wt.textContent=totalScore;
+  
+  const nx = document.getElementById('btn-next');
+  if(nx) {
+     if (currentLevel >= LEVELS.length - 1) nx.style.display = 'none';
+     else nx.style.display = 'inline-block';
+  }
+  
+  document.getElementById('scr-win').classList.remove('hidden');
+}
+
+function showGameOver(){
+  state='over';
+  if(totalScore>bestScore) bestScore=totalScore;
+  saveProgress();
+  const os = document.getElementById('over-score');
+  if(os) os.textContent=totalScore;
+  const om = document.getElementById('over-best-msg');
+  if(om) om.textContent=totalScore>=bestScore?'🏆 New Best Score!':'Best: '+bestScore;
+  document.getElementById('scr-over').classList.remove('hidden');
+}
+
+function showVictory(){
+  state='victory';
+  if(totalScore>bestScore) bestScore=totalScore;
+  saveProgress();
+  const vs = document.getElementById('vic-score');
+  if(vs) vs.textContent=totalScore;
+  const vb = document.getElementById('vic-best');
+  if(vb) vb.textContent='🏆 Best: '+bestScore;
+  document.getElementById('scr-victory').classList.remove('hidden');
+}
+
+function getCanvasPos(e){
+  const rect = canvas.getBoundingClientRect();
+  let src = e;
+  if (e.touches && e.touches.length > 0) {
+      src = e.touches[0];
+  } else if (e.changedTouches && e.changedTouches.length > 0) {
+      src = e.changedTouches[0];
+  }
+  return {
+    x: (src.clientX - rect.left) / uniformScale, 
+    y: (src.clientY - rect.top) / uniformScale
+  };
+}
+
+function onDown(e){
+  try {
+      const target = e.target;
+      if(e.cancelable && target && typeof target.closest === 'function' && !target.closest('.overlay-box')) {
+          e.preventDefault(); 
+      }
+      if(state!=='play'||!currentBird)return;
+      
+      if(currentBird.launched && !currentBird.activated && !currentBird.splitDone){
+         triggerSpecialAbility(currentBird);
+         return;
+      }
+
+      const {x,y} = getCanvasPos(e);
+      if(!currentBird.launched) {
+        const d=Math.sqrt((x-currentBird.x)**2+(y-currentBird.y)**2);
+        if(d<currentBird.r+60){ // Expanded grab radius for easier mobile tapping
+          isDragging=true;dragX=x;dragY=y;
+        }
+      }
+  } catch(err) { console.error("Touch start logic error:", err); }
+}
+
+function updatePowerBar(pct) {
+  const wrap = document.getElementById('power-bar-wrap');
+  const fill = document.getElementById('power-bar-fill');
+  if(!wrap || !fill) return;
+  if(pct <= 0) { wrap.classList.remove('visible'); return; }
+  wrap.classList.add('visible');
+  fill.style.width = Math.min(100, pct * 100) + '%';
+}
+
+function onMove(e){
+  try {
+      const target = e.target;
+      if(e.cancelable && e.type === 'touchmove') {
+        if(target && typeof target.closest === 'function' && !target.closest('.overlay-box')) {
+            e.preventDefault();
+        }
+      }
+      if(!isDragging)return;
+      
+      const {x,y} = getCanvasPos(e);
+      const dx=x-SLING.x,dy=y-SLING.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>MAX_DRAG){
+          const a=Math.atan2(dy,dx);
+          dragX=SLING.x+Math.cos(a)*MAX_DRAG;
+          dragY=SLING.y+Math.sin(a)*MAX_DRAG;
+      } else {
+          dragX=x;dragY=y;
+      }
+      if(currentBird) {
+          currentBird.x=dragX;
+          currentBird.y=dragY;
+      }
+      // Update power bar
+      const dragDist = Math.sqrt((dragX-SLING.x)**2+(dragY-SLING.y)**2);
+      updatePowerBar(dragDist / MAX_DRAG);
+  } catch(err) { console.error("Touch move logic error:", err); }
+}
+
+function launch(){
+  if(!currentBird||currentBird.launched)return;
+  const dx=SLING.x-dragX,dy=SLING.y-dragY;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist<15){currentBird.x=SLING.x;currentBird.y=SLING.y;return;}
+  const pwr=Math.min(MAX_DRAG,dist);
+  const ang=Math.atan2(dy,dx);
+  currentBird.vx=Math.cos(ang)*pwr*.28;
+  currentBird.vy=Math.sin(ang)*pwr*.28;
+  currentBird.launched=true;trails=[];
+  sfxLaunch();
+  updatePowerBar(0);
+  // Show tap hint if bird has a special ability
+  showTapHint(currentBird);
+}
+
+function onUp(e){
+  try {
+      if(!isDragging)return;
+      isDragging=false;
+      launch();
+  } catch(err) { console.error("Touch end logic error:", err); }
+}
+
+// Bind exclusively to canvas to prevent blocking HTML UI buttons
+canvas.addEventListener('mousedown',onDown); 
+window.addEventListener('mousemove',onMove);
+window.addEventListener('mouseup',onUp); 
+
+canvas.addEventListener('touchstart',onDown,{passive:false});
+window.addEventListener('touchmove',onMove,{passive:false});
+window.addEventListener('touchend',onUp,{passive:false});
+window.addEventListener('touchcancel',onUp,{passive:false}); // Ensure interrupted gestures still launch
+
+function startLevel(idx){
+  currentLevel=idx; levelScore=0;
+  document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+  document.getElementById('btn-retry-main').style.display='inline-flex';
+  document.getElementById('btn-map-main').style.display='inline-flex';
+  document.getElementById('btn-pause').style.display='inline-flex';
+  setPaused(false);
+  state='play'; buildLevel(idx);
+}
+
+// Button Bindings
+document.getElementById('btn-start').onclick=()=>{ getAudioCtx(); showMap(); };
+document.getElementById('btn-map-back').onclick=()=>{ document.getElementById('scr-map').classList.add('hidden'); document.getElementById('scr-start').classList.remove('hidden'); };
+document.getElementById('btn-next').onclick=()=>{ const next=currentLevel+1; if(next>=LEVELS.length){showVictory();}else{startLevel(next);} };
+document.getElementById('btn-retry-win').onclick=()=>{ totalScore -= levelScore; levelScore=0; startLevel(currentLevel); };
+document.getElementById('btn-retry').onclick=()=>{levelScore=0;startLevel(currentLevel);};
+document.getElementById('btn-retry-main').onclick=()=>{ totalScore -= levelScore; levelScore=0; startLevel(currentLevel); };
+document.getElementById('btn-play-again').onclick=showMap;
+document.getElementById('btn-map-win').onclick=showMap;
+document.getElementById('btn-map-main').onclick=showMap;
+document.getElementById('btn-map-over').onclick=showMap;
+
+document.getElementById('btn-pause').onclick = () => { if(state==='play') setPaused(!paused); };
+document.getElementById('btn-resume').onclick = () => setPaused(false);
+document.getElementById('btn-pause-map').onclick = () => { setPaused(false); showMap(); };
+document.getElementById('btn-pause-retry').onclick = () => { setPaused(false); totalScore -= levelScore; levelScore=0; startLevel(currentLevel); };
+
+document.getElementById('btn-fullscreen').onclick = () => {
+  const elem = document.documentElement;
+  if (!document.fullscreenElement) {
+    if (elem.requestFullscreen) { elem.requestFullscreen().catch(e=>{}); }
+    if(screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e=>{}); }
+  } else {
+    if (document.exitFullscreen) { document.exitFullscreen().catch(e=>{}); }
+  }
+};
+
+// Start
+initScenery({sky1:'#1a6fbf',sky2:'#a8d8f0'});
+buildLevel(0); state='start'; gameLoop();
+</script>
+</body>
+</html>
